@@ -221,7 +221,6 @@ class DimerEigenmodeSearch:
             self.logfile.write(l)
             self.logfile.flush()
 
-
     def get_rotational_force(self):
         """Calculate the rotational force that acts on the dimer."""
         rot_force = perpendicular_vector((self.forces1 - self.forces2),
