@@ -231,9 +231,8 @@ class DimerEigenmodeSearch:
                3 and isinstance(self.basis[0][0], float):
                 rot_force = perpendicular_vector(rot_force, self.basis)
             else:
-                e = 'Support for for eigenmodes higher than the 2nd  ' + \
-                    'lowest is not yet implemented.'
-                raise NotImplementedError(e) # NYI
+                for base in self.basis:
+                    rot_force = perpendicular_vector(rot_force, base)
         return rot_force
 
     def update_curvature(self, curv = None):
