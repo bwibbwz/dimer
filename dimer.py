@@ -884,12 +884,13 @@ class MinModeAtoms:
         # Set up a True mask if there is no mask supplied
         if mask is None:
             mask = [True for _ in self]
-            w = 'No displacement mask was supplied, mask is ' + \
-                'set to True for all atoms.\n'
-            warnings.warn(w, UserWarning)
-            if self.logfile is not None:
-                self.logfile.write('MINMODE:WARN: ' + w + '\n')
-                self.logfile.flush()
+            if c_mask is None:
+                w = 'It was not possible to figure out which atoms to ' + \
+                    'displace, Will try to displace all atoms.\n'
+                warnings.warn(w, UserWarning)
+                if self.logfile is not None:
+                    self.logfile.write('MINMODE:WARN: ' + w + '\n')
+                    self.logfile.flush()
 
         # Resolve mask / c_mask conflicts
         if c_mask is not None:
