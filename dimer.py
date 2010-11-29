@@ -523,15 +523,13 @@ class MinModeAtoms:
 
     """
     # NB: Implement self.order
-    def __init__(self, atoms, control=None, eigenmode=None, \
-                 second_eigenmode=None, **kwargs):
+    def __init__(self, atoms, control=None, eigenmodes=None, **kwargs):
         self.minmode_init = True
         self.atoms = atoms
 
         # Initialize to None to avoid strange behaviour due to __getattr__
-        self.eigenmode = eigenmode
-        self.second_eigenmode = second_eigenmode
-        self.curvature = None
+        self.eigenmodes = eigenmodes
+        self.curvatures = None
 
         if control is None:
             self.control = DimerControl(**kwargs)
@@ -557,9 +555,9 @@ class MinModeAtoms:
 
         # Check the order
         self.order = self.control.get_parameter('order')
-        if self.order > 2:
-            e = 'Orders above 2 are not yet implemented.'
-            raise NotImplementedError(e)
+
+        # Construct the curvatures list
+        self.curvatures = [100.0] * self.order
 
         # Save the original state of the atoms.
         self.atoms0 = self.atoms.copy()
@@ -582,10 +580,10 @@ class MinModeAtoms:
                        self.atoms.get_forces(), None, None, self.atoms0)
                 self.atoms0.set_calculator(calc)
 
-    def initialize_eigenmode(self, method=None, eigenmode=None,
-                             second_eigenmode=None, gauss_std=None):
+    def initialize_eigenmodes(self, method=None, eigenmodes=None, \
+                              gauss_std=None):
         """Make an initial guess for the eigenmode."""
-        if eigenmode is None:
+        if eigenmodes is None:
             pos = self.get_positions()
             old_pos = self.get_original_positions()
             if method == None:
@@ -605,19 +603,20 @@ class MinModeAtoms:
                     'must have moved away from the original positions.' + \
                     'You have requested \'%s\'.' % method
                 raise NotImplementedError(e) # NYI
+            eigenmodes = [eigenmode]
         if self.order > 1:
-            if second_eigenmode is None:
-                pos = self.get_positions()
-                old_pos = self.get_original_positions()
-                self.displace(log = False, gauss_std = gauss_std,
-                              method = method)
-                new_pos = self.get_positions()
-                second_eigenmode = normalize(new_pos - pos)
-                self.set_positions(pos)
-            self.second_eigenmode = second_eigenmode
+            if len(eigenmodes) == 1:
+                for k in range(1, self.order):
+                    pos = self.get_positions()
+                    self.displace(log = False, gauss_std = gauss_std,
+                                  method = method)
+                    new_pos = self.get_positions()
+                    eigenmode = normalize(new_pos - pos)
+                    self.set_positions(pos)
+                    eigenmodes += [eigenmode]
 
-        self.eigenmode = eigenmode
-        self.eigenmode_log()
+        self.eigenmodes = eigenmodes
+#        self.eigenmode_log() # ATH log after change
 
     # NB maybe this name might be confusing in context to
     # calc.calculation_required()
@@ -629,11 +628,7 @@ class MinModeAtoms:
         """Calculate and store the potential energy and forces."""
         if self.minmode_init:
             self.minmode_init = False
-            if self.order == 2:
-                self.initialize_eigenmode(eigenmode = self.eigenmode, \
-                              second_eigenmode = self.second_eigenmode)
-            else:
-                self.initialize_eigenmode(eigenmode = self.eigenmode)
+            self.initialize_eigenmodes(eigenmodes = self.eigenmodes)
         self.rotation_required = True
         self.forces0 = self.atoms.get_forces(**kwargs)
         self.energy0 = self.atoms.get_potential_energy()
@@ -661,49 +656,41 @@ class MinModeAtoms:
             return forces
         else:
             if self.rotation_required:
-                self.find_eigenmode()
-                self.eigenmode_log()
+                self.find_eigenmodes(order = self.order)
+                self.eigenmode_log() # ATH log after change
                 self.rotation_required = False
                 self.control.increment_counter('optcount')
             return self.get_projected_forces()
 
-    def find_eigenmode(self, order=None):
-        """Launch an eigenmode search."""
-        if self.control.get_parameter('eigenmode_method').lower() == 'dimer':
-            search = DimerEigenmodeSearch(self, self.control)
-        else:
-            raise RuntimeError('No control object present.')
-        # NB: BUG! This might be done twice
-        search.converge_to_eigenmode()
-        search.set_up_for_optimization_step()
-        self.set_eigenmode(search.get_eigenmode())
-        self.set_curvature(search.get_curvature())
-        mode = self.get_eigenmode()
-        for k in range(1, self.order):
-            sm = normalize(perpendicular_vector(self.second_eigenmode, mode))
-            search = DimerEigenmodeSearch(self, self.control, eigenmode = \
-                                          sm, basis = self.get_eigenmode())
+    def find_eigenmodes(self, order=1):
+        """Launch eigenmode searches."""
+        if self.control.get_parameter('eigenmode_method').lower() != 'dimer':
+            e = 'Only the Dimer control object has been implemented.'
+            raise NotImplementedError(e) # NYI
+        for k in range(order):
+            # ATH Need to make sure there are no extra force calls here
+            search = DimerEigenmodeSearch(self, self.control, \
+                eigenmode = self.eigenmodes[k], basis = self.eigenmodes[:k])
             search.converge_to_eigenmode()
             search.set_up_for_optimization_step()
-            sm = search.get_eigenmode()
-            self.second_eigenmode = sm
+            self.eigenmodes[k] = search.get_eigenmode()
+            self.curvatures[k] = search.get_curvature()
 
     def get_projected_forces(self, pos=None):
         """Return the projected forces."""
         if pos is not None:
-            forces = self.get_forces(real = True, pos = pos)
+            forces = self.get_forces(real = True, pos = pos).copy()
         else:
-            forces = self.forces0
-        #NYI This If statement needs to be overridable in the control
-        if self.curvature > 0.0:
-            projected_forces = -parallel_vector(forces, self.eigenmode)
-        else:
-            projected_forces = forces - \
-                               2 * parallel_vector(forces, self.eigenmode)
-        if self.control.get_parameter('order') == 2:
-            projected_forces = projected_forces - \
-                2 * parallel_vector(projected_forces, self.second_eigenmode)
-        return projected_forces
+            forces = self.forces0.copy()
+
+        # Loop through all the eigenmodes
+        for k, mode in enumerate(self.eigenmodes):
+            #NYI This If statement needs to be overridable in the control
+            if self.get_curvature(order = k) > 0.0:
+                forces = -parallel_vector(forces, mode)
+            else:
+                forces -= 2 * parallel_vector(forces, mode)
+        return forces
 
     def restore_original_positions(self):
         """Restore the MinModeAtoms object positions to the original state."""
@@ -725,18 +712,13 @@ class MinModeAtoms:
         """Return the control object."""
         return self.control
 
-    def get_curvature(self):
+    def get_curvature(self, order=1):
         """Return the eigenvalue estimate."""
-        return self.curvature
+        return self.curvatures[order - 1]
 
     def get_eigenmode(self, order=1):
         """Return the current eigenmode guess."""
-        if order == 1:
-            return self.eigenmode
-        elif order == 2:
-            return self.second_eigenmode
-        else:
-            raise NotImplementedError('Only orders 1 and 2 are supported')
+        return self.eigenmodes[order - 1]
 
     def get_atoms(self):
         """Return the unextended Atoms object."""
@@ -748,16 +730,11 @@ class MinModeAtoms:
 
     def set_eigenmode(self, eigenmode, order=1):
         """Set the eigenmode guess."""
-        if order == 1:
-            self.eigenmode = eigenmode
-        elif order == 2:
-            self.second_eigenmode = eigenmode
-        else:
-            raise NotImplementedError('Only orders 1 and 2 are supported')
+        self.eigenmodes[order - 1] = eigenmode
 
-    def set_curvature(self, curvature):
+    def set_curvature(self, curvature, order=1):
         """Set the eigenvalue estimate."""
-        self.curvature = curvature
+        self.curvatures[order - 1] = curvature
 
     # Pipe all the stuff from Atoms that is not overwritten.
     # Pipe all requests for get_original_* to self.atoms0.
@@ -934,6 +911,7 @@ class MinModeAtoms:
 
     def eigenmode_log(self):
         """Log the eigenmode (eigenmode estimate)"""
+        return # ATH
         if self.ologfile is not None:
             l = 'MINMODE:MODE: Optimization Step: %i\n' % \
                    (self.control.get_counter('optcount'))
