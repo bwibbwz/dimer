@@ -604,6 +604,8 @@ class MinModeAtoms:
                     'You have requested \'%s\'.' % method
                 raise NotImplementedError(e) # NYI
             eigenmodes = [eigenmode]
+
+        # Create random higher order mode guesses
         if self.order > 1:
             if len(eigenmodes) == 1:
                 for k in range(1, self.order):
@@ -616,7 +618,11 @@ class MinModeAtoms:
                     eigenmodes += [eigenmode]
 
         self.eigenmodes = eigenmodes
-#        self.eigenmode_log() # ATH log after change
+        # Ensure that the higher order mode guesses are all orthogonal
+        if self.order > 1:
+            for k in range(self.order):
+                self.ensure_eigenmode_orthogonality(k)
+        self.eigenmode_log()
 
     # NB maybe this name might be confusing in context to
     # calc.calculation_required()
@@ -657,10 +663,16 @@ class MinModeAtoms:
         else:
             if self.rotation_required:
                 self.find_eigenmodes(order = self.order)
-                self.eigenmode_log() # ATH log after change
+                self.eigenmode_log()
                 self.rotation_required = False
                 self.control.increment_counter('optcount')
             return self.get_projected_forces()
+
+    def ensure_eigenmode_orthogonality(self, order):
+        mode = self.eigenmodes[order - 1].copy()
+        for k in range(order - 1):
+            mode = perpendicular_vector(mode, self.eigenmodes[k])
+        self.eigenmodes[order - 1] = normalize(mode)
 
     def find_eigenmodes(self, order=1):
         """Launch eigenmode searches."""
@@ -669,12 +681,16 @@ class MinModeAtoms:
             raise NotImplementedError(e) # NYI
         for k in range(order):
             # ATH Need to make sure there are no extra force calls here
+            if k > 0:
+                self.ensure_eigenmode_orthogonality(k + 1)
             search = DimerEigenmodeSearch(self, self.control, \
                 eigenmode = self.eigenmodes[k], basis = self.eigenmodes[:k])
             search.converge_to_eigenmode()
             search.set_up_for_optimization_step()
             self.eigenmodes[k] = search.get_eigenmode()
             self.curvatures[k] = search.get_curvature()
+#        ems = self.eigenmodes
+#        print '--- dots', np.vdot(ems[0], ems[1]), '---'
 
     def get_projected_forces(self, pos=None):
         """Return the projected forces."""
@@ -686,7 +702,9 @@ class MinModeAtoms:
         # Loop through all the eigenmodes
         for k, mode in enumerate(self.eigenmodes):
             #NYI This If statement needs to be overridable in the control
-            if self.get_curvature(order = k) > 0.0:
+            if self.get_curvature(order = k) > 0.0 and self.order == 1:
+                # NB: Can this be done with a plane (or higher) or a linear
+                #     combination of all the eigenmodes?
                 forces = -parallel_vector(forces, mode)
             else:
                 forces -= 2 * parallel_vector(forces, mode)
@@ -712,9 +730,12 @@ class MinModeAtoms:
         """Return the control object."""
         return self.control
 
-    def get_curvature(self, order=1):
+    def get_curvature(self, order='max'):
         """Return the eigenvalue estimate."""
-        return self.curvatures[order - 1]
+        if order == 'max':
+            return max(self.curvatures)
+        else:
+            return self.curvatures[order - 1]
 
     def get_eigenmode(self, order=1):
         """Return the current eigenmode guess."""
@@ -910,15 +931,15 @@ class MinModeAtoms:
             self.displacement_log(self.get_positions() - pos0, parameters)
 
     def eigenmode_log(self):
-        """Log the eigenmode (eigenmode estimate)"""
-        return # ATH
+        """Log the eigenmodes (eigenmode estimates)"""
         if self.ologfile is not None:
             l = 'MINMODE:MODE: Optimization Step: %i\n' % \
                    (self.control.get_counter('optcount'))
-            for k in range(len(self.eigenmode)):
-                l += 'MINMODE:MODE: %7i %15.8f %15.8f %15.8f\n' % (k,
-                     self.eigenmode[k][0], self.eigenmode[k][1],
-                     self.eigenmode[k][2])
+            for m_num, mode in enumerate(self.eigenmodes):
+                l += 'MINMODE:MODE: Order: %i\n' % m_num
+                for k in range(len(mode)):
+                    l += 'MINMODE:MODE: %7i %15.8f %15.8f %15.8f\n' % (k,
+                         mode[k][0], mode[k][1], mode[k][2])
             self.ologfile.write(l)
             self.ologfile.flush()
 
@@ -943,7 +964,7 @@ class MinModeAtoms:
             self.logfile.write(l)
             self.logfile.flush()
 
-    def summarize(self):
+    def summarize(self): # ATH
         """Summarize the Minimum mode search."""
         if self.logfile is None:
             logfile = sys.stdout
