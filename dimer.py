@@ -447,7 +447,7 @@ class DimerControl(MinModeControl):
 
     """
     # Default parameters for the Dimer eigenmode search
-    parameters = {'eigenmode_method': 'dimer',# NB: should not be a parameter
+    parameters = {'eigenmode_method': 'dimer',
                   'f_rot_min': 0.1,
                   'f_rot_max': 1.00,
                   'max_num_rot': 1,
@@ -463,8 +463,7 @@ class DimerControl(MinModeControl):
                   'displacement_method': 'gauss',
                   'gauss_std': 0.1,
                   'order': 1,
-                  # NB mask should not be a "parameter"
-                  'mask': None,
+                  'mask': None, # NB mask should not be a "parameter"
                   'displacement_center': None,
                   'displacement_radius': None,
                   'number_of_displacement_atoms': None}
@@ -522,7 +521,6 @@ class MinModeAtoms:
     .. [4] Kastner and Sherwood, JCP 128, 014106 (2008).
 
     """
-    # NB: Implement self.order
     def __init__(self, atoms, control=None, eigenmodes=None, **kwargs):
         self.minmode_init = True
         self.atoms = atoms
@@ -680,7 +678,6 @@ class MinModeAtoms:
             e = 'Only the Dimer control object has been implemented.'
             raise NotImplementedError(e) # NYI
         for k in range(order):
-            # ATH Need to make sure there are no extra force calls here
             if k > 0:
                 self.ensure_eigenmode_orthogonality(k + 1)
             search = DimerEigenmodeSearch(self, self.control, \
@@ -698,10 +695,10 @@ class MinModeAtoms:
             forces = self.forces0.copy()
 
         # Loop through all the eigenmodes
+        # NB: Can this be done with a linear combination, instead?
         for k, mode in enumerate(self.eigenmodes):
-            #NYI This If statement needs to be overridable in the control
+            # NYI This If statement needs to be overridable in the control
             if self.get_curvature(order = k) > 0.0 and self.order == 1:
-                # NB: Can this be done with a linear combination?
                 forces = -parallel_vector(forces, mode)
             else:
                 forces -= 2 * parallel_vector(forces, mode)
@@ -764,7 +761,6 @@ class MinModeAtoms:
         else:
             return getattr(self.atoms, attr)
 
-    # NB: Should use neighborlist for displacement?
     def displace(self, displacement_vector=None, mask=None, method=None,
                  displacement_center=None, radius=None, number_of_atoms=None,
                  gauss_std=None, mic=True, log=True):
