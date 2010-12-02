@@ -4,20 +4,6 @@ There is, currently, only one implemented method: The Dimer method.
 
 """
 
-# NB: A get_higher_modes() method is needed.
-#     find_eigenmode needs work.
-#     restructure the way eigenmodes are stored.
-#     Store higher modes.
-# NB: get/set_curvature() need work.
-#     Higher modes
-#     Units?
-#     Connection to eigenvalue?
-# NB: Make a write_mode() method (to trajectory file).
-# NB: Missing copy methods for the classes.
-# NB: Should the be a displacement log header?
-# NB: Needs to be possible to keep only the last eigenmode.
-# NB: Missing multiple displacement_centers and radii and num_atoms.
-
 import sys
 import time
 import warnings

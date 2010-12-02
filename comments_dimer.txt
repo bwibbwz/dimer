@@ -1,0 +1,10 @@
+# NB: get/set_curvature() need work.
+#     Higher modes
+#     Units?
+#     Connection to eigenvalue?
+# NB: Make a write_mode() method (to trajectory file).
+# NB: Missing copy methods for the classes.
+# NB: Should there be a displacement log header?
+# NB: Needs to be possible to store only the last eigenmode.
+# NB: Missing multiple displacement_centers and radii and num_atoms.
+
