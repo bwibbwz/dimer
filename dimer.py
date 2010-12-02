@@ -1132,4 +1132,3 @@ def read_eigenmode(olog, index = -1):
 # Aliases
 DimerAtoms = MinModeAtoms
 DimerTranslate = MinModeTranslate
-
