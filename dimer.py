@@ -689,8 +689,6 @@ class MinModeAtoms:
             search.set_up_for_optimization_step()
             self.eigenmodes[k] = search.get_eigenmode()
             self.curvatures[k] = search.get_curvature()
-#        ems = self.eigenmodes
-#        print '--- dots', np.vdot(ems[0], ems[1]), '---'
 
     def get_projected_forces(self, pos=None):
         """Return the projected forces."""
@@ -703,8 +701,7 @@ class MinModeAtoms:
         for k, mode in enumerate(self.eigenmodes):
             #NYI This If statement needs to be overridable in the control
             if self.get_curvature(order = k) > 0.0 and self.order == 1:
-                # NB: Can this be done with a plane (or higher) or a linear
-                #     combination of all the eigenmodes?
+                # NB: Can this be done with a linear combination?
                 forces = -parallel_vector(forces, mode)
             else:
                 forces -= 2 * parallel_vector(forces, mode)
@@ -964,7 +961,7 @@ class MinModeAtoms:
             self.logfile.write(l)
             self.logfile.flush()
 
-    def summarize(self): # ATH
+    def summarize(self):
         """Summarize the Minimum mode search."""
         if self.logfile is None:
             logfile = sys.stdout
