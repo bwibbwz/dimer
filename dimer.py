@@ -962,7 +962,6 @@ class MinModeAtoms:
 
         logfile.write(l)
 
-
 class MinModeTranslate(Optimizer):
     """An Optimizer specifically tailored to minimum mode following."""
     def __init__(self, atoms, logfile='-', trajectory=None):
