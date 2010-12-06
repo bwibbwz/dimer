@@ -89,7 +89,6 @@ class NEB:
         if not self.parallel:
             # Do all images - one at a time:
             for i in range(1, self.nimages - 1):
-#                print '---', i, '---'
                 self.energies[i] = images[i].get_potential_energy()
                 self.clean_forces[i] = images[i].get_forces()
         else:
@@ -110,10 +109,6 @@ class NEB:
                 root = (i - 1) * size // (self.nimages - 2)
                 world.broadcast(self.energies[i:i], root) # ATH
                 world.broadcast(self.forces[i], root)
-
-#        for k in range(len(self.images)):
-#            img = self.images[k]
-#            print k, ((img.get_forces()**2).sum(axis=1).max())**0.5
 
     def get_forces(self):
         """Evaluate and return the forces."""
@@ -139,8 +134,6 @@ class NEB:
 
     def project_forces_NEW(self):
         k = self.k
-####        if self.climb:
-####            print 'climb'
         for i in range(1, self.nimages - 1):
             t = self.tangents[i]
             nt = np.vdot(t, t)**0.5
@@ -148,7 +141,6 @@ class NEB:
             fct = np.vdot(f_c, t / nt)
             if i == self.imax and self.climb:
                 f_out = f_c - 2 * fct * t / nt
-#                print 'climb'
             else:
                 t_m = self.images[i].get_positions() - \
                       self.images[i-1].get_positions()
