@@ -42,8 +42,8 @@ class DimerEigenmodeSearch:
     This class implements the rotational part of the dimer saddle point
     searching method.
 
-    Parameters
-    ----------
+    Parameters:
+
     atoms : MinModeAtoms object
         MinModeAtoms is an extension to the Atoms object, which includes
         information about the lowest eigenvalue mode.
@@ -56,16 +56,16 @@ class DimerEigenmodeSearch:
         It is possible to constrain the eigenmodes to be orthogonal
         to this given eigenmode.
 
-    Notes
-    -----
+    Notes:
+
     The code is inspired, with permission, by code written by the Henkelman
     group, which can be found at http://theory.cm.utexas.edu/vtsttools/code/
 
-    References
-    ----------
+    References:
+
     .. [1] Henkelman and Jonsson, JCP 111, 7010 (1999)
     .. [2] Olsen, Kroes, Henkelman, Arnaldsson, and Jonsson, JCP 121,
-    9776 (2004).
+           9776 (2004).
     .. [3] Heyden, Bell, and Keil, JCP 123, 224101 (2005).
     .. [4] Kastner and Sherwood, JCP 128, 014106 (2008).
 
@@ -495,22 +495,22 @@ class MinModeAtoms:
     along the eigenmode estimate. This eventually brings the system to
     a saddle point.
 
-    Parameters
-    ----------
+    Parameters:
+
     atoms : Atoms object
         A regular Atoms object
     control : MinModeControl object
         Contains the parameters necessary for the eigenmode search.
         If no control object is supplied a default DimerControl
         will be created and used.
-    mask: A list of booleans as long as the number of atoms
+    mask: list of bool
         Determines which atoms will be moved when calling displace()
 
-    References
-    ----------
+    References:
+
     .. [1] Henkelman and Jonsson, JCP 111, 7010 (1999)
     .. [2] Olsen, Kroes, Henkelman, Arnaldsson, and Jonsson, JCP 121,
-    9776 (2004).
+           9776 (2004).
     .. [3] Heyden, Bell, and Keil, JCP 123, 224101 (2005).
     .. [4] Kastner and Sherwood, JCP 128, 014106 (2008).
 
