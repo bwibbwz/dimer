@@ -134,6 +134,8 @@ class NEB:
 
     def project_forces_NEW(self):
         k = self.k
+        print '-'*29, 'Force components', '-'*29
+        print '  img  f_c_perp  f_c_para  f_s_perp  f_s_para  f_s_dneb     f_out       opt '
         for i in range(1, self.nimages - 1):
             t = self.tangents[i]
             nt = np.vdot(t, t)**0.5
@@ -160,29 +162,19 @@ class NEB:
 
 # IDEA: If f_c_perp is small force dimer rotation?
 
-                f_s_dneb = f_s_perp - np.vdot(f_s_perp, f_c_perp) * f_c_perp / norm(f_c_perp)
-#                print f_s_dneb[-1], norm(f_s_dneb), np.vdot(f_s_dneb, t/nt)
-#                print f_s_para[-1], norm(f_s_para), np.vdot(f_s_para, t/nt)
-#                print f_s_new[-1], norm(f_s_new), np.vdot(f_s_new, t/nt)
+                f_s_dneb = f_s_perp - np.vdot(f_s_perp, f_c_perp) * f_c_perp / norm(f_c_perp)**0.5
 
                 if self.climb:
                     f_out = f_c_perp + f_s_dneb + f_s_para
                 else:
-#                    f_out = f_c_perp + f_s_para + f_s_dneb
                     f_out = f_c_perp + f_s_para
-#                    f_out = f_c_perp + f_s_new
-#                f_out = f_c_perp + f_s_old
-#                f_out = f_s_new + f_s_dneb
-#                f_out = f_c_perp + f_s_dneb + f_s_para
-# compare f_s_para og f_s_new
+
                 f_out = f_c_perp + f_s_para + f_s_dneb
-#                f_out = f_c_perp + f_s_new
-#                f_out = f_c_perp + f_s_para + f_s_dneb
-          #####      print i, np.vdot(normalize(t_m), normalize(t_p)), norm(t_m) - norm(t_p)
-#                f_out = f_c_perp + f_s
-#            print t[-1], norm(t), i
-#            print '-'*40
+
+                print '  #%2i' % i +  '%10.4f'*6 % (norm(f_c_perp)**0.5, norm(f_c_para)**0.5, norm(f_s_perp)**0.5, norm(f_s_para)**0.5, norm(f_s_dneb)**0.5, norm(f_out)**0.5) + '%10.4f' % ((f_out**2).sum(axis=1).max())**0.5, ' '
+
             self.projected_forces[i] = f_out.copy()
+        print '-'*76
 
     def project_forces_OLD(self):
         for i in range(1, self.nimages - 1):
@@ -213,8 +205,11 @@ class NEB:
 #                             self.k * tangent / tt )
 #                    print asdf[-1],
 #                    print np.vdot(normalize(asdf), normalize(tangent)), norm(asdf)
-                    f -= ((np.vdot(tangent_m, tangent_m)**0.5 - \
-                           np.vdot(tangent_p, tangent_p)**0.5) * \
+#                    f -= ((np.vdot(tangent_m, tangent_m)**0.5 - \
+#                           np.vdot(tangent_p, tangent_p)**0.5) * \
+#                           self.k * tangent / tt**0.5 )
+                    f -= ((np.vdot(tangent_m, tangent_m) - \
+                           np.vdot(tangent_p, tangent_p)) * \
                            self.k * tangent / tt**0.5 )
             self.projected_forces[i] = f.copy()
 
