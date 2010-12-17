@@ -27,10 +27,6 @@ class second(NEB):
             self.first_modes[k] = m.get_eigenmode()
             self.minmodes += [m]
 
-        # Do these need to depend on the dimensionality of the system?
-        self.switch_min = 0.60
-        self.switch_max = 0.95
-
         # ATH DEV
         self.animate = 0
         self.enMat = None
