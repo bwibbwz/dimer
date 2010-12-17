@@ -64,22 +64,19 @@ class NEB:
             elif i > self.imax:
                 tangent = tangent_m
             else:
-                if self.oldtangent:
-                    tangent = tangent_m + tangent_p
+                # Possible error when end images become highest.
+                ei = self.energies[i]
+                eim = self.energies[i - 1]
+                eip = self.energies[i + 1]
+                eimax = max(abs(eip - ei), abs(eim - ei))
+                eimin = min(abs(eip - ei), abs(eim - ei))
+                if eip > eim:
+                    tangent = tangent_p * eimax + tangent_m * eimin
                 else:
-                    # Possible error when end images become highest.
-                    ei = self.energies[i]
-                    eim = self.energies[i - 1]
-                    eip = self.energies[i + 1]
-                    eimax = max(abs(eip - ei), abs(eim - ei))
-                    eimin = min(abs(eip - ei), abs(eim - ei))
-                    if eip > eim:
-                        tangent = tangent_p * eimax + tangent_m * eimin
-                    else:
-                        tangent = tangent_p * eimin + tangent_m * eimax
-                    tangent /= np.vdot(tangent, tangent)**0.5
-                    tangent *= (np.vdot(tangent_m, tangent_m)**0.5 + \
-                                np.vdot(tangent_p, tangent_p)**0.5) / 2.0
+                    tangent = tangent_p * eimin + tangent_m * eimax
+                tangent /= np.vdot(tangent, tangent)**0.5
+                tangent *= (np.vdot(tangent_m, tangent_m)**0.5 + \
+                            np.vdot(tangent_p, tangent_p)**0.5) / 2.0
             self.tangents[i] = tangent
             tangent_m = tangent_p
 
@@ -129,13 +126,7 @@ class NEB:
         return self.projected_forces[1:self.nimages-1].reshape((-1, 3))
 
     def project_forces(self):
-#        self.project_forces_OLD()
-        self.project_forces_NEW()
-
-    def project_forces_NEW(self):
         k = self.k
-        print '-'*29, 'Force components', '-'*29
-        print '  img  f_c_perp  f_c_para  f_s_perp  f_s_para  f_s_dneb     f_out       opt '
         for i in range(1, self.nimages - 1):
             t = self.tangents[i]
             nt = np.vdot(t, t)**0.5
@@ -158,102 +149,14 @@ class NEB:
                 f_s_para = fst * t / nt
                 f_s_perp = f_s - f_s_para
                 f_s_new = (nt_p - nt_m) * k * t / nt
-                f_s_old = np.vdot(t_p - t_m, t) * k * t / nt**2
+#                f_s_old = np.vdot(t_p - t_m, t) * k * t / nt**2
+                f_s_dneb = f_s_perp - np.vdot(f_s_perp, f_c_perp) * f_c_perp / norm(f_c_perp)**0.5
 
 # IDEA: If f_c_perp is small force dimer rotation?
 
-                f_s_dneb = f_s_perp - np.vdot(f_s_perp, f_c_perp) * f_c_perp / norm(f_c_perp)**0.5
-
-                if self.climb:
-                    f_out = f_c_perp + f_s_dneb + f_s_para
-                else:
-                    f_out = f_c_perp + f_s_para
-
                 f_out = f_c_perp + f_s_para + f_s_dneb
 
-                print '  #%2i' % i +  '%10.4f'*6 % (norm(f_c_perp)**0.5, norm(f_c_para)**0.5, norm(f_s_perp)**0.5, norm(f_s_para)**0.5, norm(f_s_dneb)**0.5, norm(f_out)**0.5) + '%10.4f' % ((f_out**2).sum(axis=1).max())**0.5, ' '
-
             self.projected_forces[i] = f_out.copy()
-        print '-'*76
-
-    def project_forces_OLD(self):
-        for i in range(1, self.nimages - 1):
-            tangent = self.tangents[i]
-            tangent_m = self.images[i].get_positions() - \
-                        self.images[i-1].get_positions()
-            tangent_p = self.images[i+1].get_positions() - \
-                        self.images[i].get_positions()
-            tt = np.vdot(tangent, tangent)
-            f = self.clean_forces[i].copy()
-            ft = np.vdot(f, tangent)
-            if i == self.imax and self.climb:
-                # Reverse the force component along the tangent
-                f -= 2 * ft / tt * tangent
-            else:
-                # Remove the force component along the tangent
-                f -= ft / tt * tangent
-                if self.oldtangent:
-#                    asdf = (np.vdot(tangent_m - tangent_p, tangent) * \
-#                            self.k / tt * tangent)
-#                    print asdf[-1],
-#                    print np.vdot(normalize(asdf), normalize(tangent)), norm(asdf)
-                    f -= (np.vdot(tangent_m - tangent_p, tangent) * \
-                          self.k / tt * tangent)
-                else:
-#                    asdf = ((np.vdot(tangent_m, tangent_m)**0.5 - \
-#                             np.vdot(tangent_p, tangent_p)**0.5) * \
-#                             self.k * tangent / tt )
-#                    print asdf[-1],
-#                    print np.vdot(normalize(asdf), normalize(tangent)), norm(asdf)
-#                    f -= ((np.vdot(tangent_m, tangent_m)**0.5 - \
-#                           np.vdot(tangent_p, tangent_p)**0.5) * \
-#                           self.k * tangent / tt**0.5 )
-                    f -= ((np.vdot(tangent_m, tangent_m) - \
-                           np.vdot(tangent_p, tangent_p)) * \
-                           self.k * tangent / tt**0.5 )
-            self.projected_forces[i] = f.copy()
-
-    def equalize_image_seperation(self):
-        norm = np.linalg.norm
-        images = self.images
-        n = self.nimages
-#        E = [i.get_potential_energy() for i in images]
-#        F = [i.get_forces() for i in images]
-        R = [i.get_positions() for i in images]
-#        s, E, Sfit, Efit, lines = fit0(E, F, R)
-#        s, E, Sfit, Efit, lines = fit(images)
-#        step = s[-1] / float(n)
-
-        rass = 0.1
-        while rass > 0.0000001:
-	    brund = []
-            for k in range(1, n - 1):
-                t = R[k+1] - R[k-1]
-                r = R[k]
-                ndm = norm(r - R[k-1])
-                ndp = norm(R[k+1] - r)
-		ndm - ndp
-#                print '-----------'
-#                print ndm - ndp
-                r -= t * (ndm - ndp) / (2 * norm(t))
-                ndm = norm(r - R[k-1])
-                ndp = norm(R[k+1] - r)
-#                print ndm, ndp, ndm - ndp
-#		print '-----------'
-		brund.append(abs(ndm - ndp))
-            rass = max(brund)
-#	    print rass
-
-#	d1 = R[1] - R[0]
-#	d2 = R[2] - R[1]
-#        print norm(d1) - norm(d2)
-#	R[1] -= (R[2] - R[0]) * (norm(d1) - norm(d2)) / (2.0 * norm(R[2] - R[0]))
-        for k in range(n):
-	    images[k].set_positions(R[k])
-#        for k in range(len(images)):
-#	    print images[k].get_potential_energy() - E[k]
-#        s, E, Sfit, Efit, lines = fit(images)
-
 
     def get_potential_energy(self):
         return self.emax
