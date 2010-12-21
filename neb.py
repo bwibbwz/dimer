@@ -140,6 +140,7 @@ class NEB:
                 nt_m = np.vdot(t_m, t_m)**0.5
                 nt_p = np.vdot(t_p, t_p)**0.5
 
+                # Calculate the various force components
                 f_c_para = fct * t / nt
                 f_c_perp = f_c - f_c_para
                 f_s = k * t_p - k * t_m
@@ -150,8 +151,7 @@ class NEB:
 #                f_s_old = np.vdot(t_p - t_m, t) * k * t / nt**2
                 f_s_dneb = f_s_perp - np.vdot(f_s_perp, f_c_perp) * f_c_perp / norm(f_c_perp)**0.5
 
-# IDEA: If f_c_perp is small force dimer rotation?
-
+                # The output force
                 f_out = f_c_perp + f_s_para + f_s_dneb
 
             self.projected_forces[i] = f_out.copy()
