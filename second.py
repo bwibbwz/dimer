@@ -8,9 +8,9 @@ from ase.dimer import normalize, DimerEigenmodeSearch, MinModeAtoms, perpendicul
 from ase.dimer import norm, parallel_vector, DimerControl
 
 class second(NEB):
-    def __init__(self, images, control, k=0.1, climb=False, parallel=False, oldtangent=False):
+    def __init__(self, images, control, k=0.1, climb=False, parallel=False):
         self.control = control
-        NEB.__init__(self, images, k, climb, parallel, oldtangent)
+        NEB.__init__(self, images, k, climb, parallel)
 
         self.first_modes = [None]*self.nimages
         self.second_modes = [None]*self.nimages
@@ -45,6 +45,8 @@ class second(NEB):
 
         # Calculate the tangents of all the images
         self.update_tangents()
+
+        # IDEA: If f_c_perp is small force dimer rotation?
 
         # Calculate the modes
         self.calculate_eigenmodes()
