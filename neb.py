@@ -8,8 +8,7 @@ from ase.io import read
 from ase.dimer import normalize, norm
 
 class NEB:
-    def __init__(self, images, k=0.1, climb=False, parallel=False,
-                 oldtangent = False):
+    def __init__(self, images, k=0.1, climb=False, parallel=False):
         self.images = images
         self.k = k
         self.climb = climb
@@ -18,7 +17,6 @@ class NEB:
         self.nimages = len(images)
         self.emax = np.nan
         self.imax = None
-        self.oldtangent = oldtangent
 
         # Set up empty arrays to store forces, energeis and tangents
         self.clean_forces = np.zeros((self.nimages, self.natoms, 3))
