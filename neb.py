@@ -1,5 +1,11 @@
 from math import sqrt
 
+''' Ideas
+Save each tangent as a trajectory (like ase.vibrations) and/or textfile.
+Make the barrier energy accesible (get_barrier_energy())
+Make it possible to seperate optimizers for each image. (might help in order to get BFGS working with NEB).
+'''
+
 import numpy as np
 
 from ase.parallel import world, rank, size
@@ -18,7 +24,7 @@ class NEB:
         self.emax = np.nan
         self.imax = None
 
-        # Set up empty arrays to store forces, energeis and tangents
+        # Set up empty arrays to store forces, energies and tangents
         self.clean_forces = np.zeros((self.nimages, self.natoms, 3))
         self.projected_forces = np.zeros((self.nimages, self.natoms, 3))
         self.energies = np.zeros(self.nimages)
@@ -62,7 +68,7 @@ class NEB:
             elif i > self.imax:
                 tangent = tangent_m
             else:
-                # Possible error when end images become highest.
+                # BUG: Possible error when end images become highest.
                 ei = self.energies[i]
                 eim = self.energies[i - 1]
                 eip = self.energies[i + 1]
@@ -153,6 +159,7 @@ class NEB:
 
                 # The output force
                 f_out = f_c_perp + f_s_para + f_s_dneb
+#                f_out = f_c_perp + f_s_para + f_s_perp
 
             self.projected_forces[i] = f_out.copy()
 
