@@ -12,7 +12,7 @@ import numpy as np
 
 from ase.optimize.optimize import Optimizer
 from math import cos, sin, atan, tan, degrees, pi, sqrt
-from random import gauss
+from random import gauss, seed
 from ase.parallel import rank
 from ase.calculators.singlepoint import SinglePointCalculator
 
@@ -544,6 +544,10 @@ class MinModeAtoms:
                     self.control.set_parameter(key, kwargs[key])
             self.control.initialize_logfiles(logfile = logfile,
                                              eigenmode_logfile = mlogfile)
+
+        # Seed the randomness
+        random_seed = int(time.time()) # NB: Need a better solution
+        seed(random_seed)
 
         # Check the order
         self.order = self.control.get_parameter('order')
