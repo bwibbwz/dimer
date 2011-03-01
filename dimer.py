@@ -609,7 +609,7 @@ class MinModeAtoms:
             eigenmodes = [eigenmode]
 
         # Create random higher order mode guesses
-        if self.order > 1:
+        if self.order > 1: # BUG: Might fail when only one mode is supplied.
             if len(eigenmodes) == 1:
                 for k in range(1, self.order):
                     pos = self.get_positions()
