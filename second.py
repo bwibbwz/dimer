@@ -32,6 +32,7 @@ class second(NEB):
         self.enMat = None
         self.xVec = None
         self.yVec = None
+        self.dev_plot = False # Can be turned on manually
 
     def get_forces(self):
         """Evaluate and return the forces."""
@@ -54,8 +55,8 @@ class second(NEB):
         # Prjoect the forces for each image
         self.invert_eigenmode_forces()
         self.project_forces()
-
-        self.plot_2d_pes()
+        if self.dev_plot:
+            self.plot_2d_pes()
         self.control.increment_counter('optcount')
         return self.projected_forces[1:self.nimages-1].reshape((-1, 3))
 
