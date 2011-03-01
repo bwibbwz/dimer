@@ -97,7 +97,7 @@ class NEB:
             i = rank * (self.nimages - 2) // size + 1
             try:
                 self.energies[i] = images[i].get_potential_energy()
-                self.forces[i] = images[i].get_forces()
+                self.clean_forces[i] = images[i].get_forces()
             except:
                 # Make sure other images also fail:
                 error = world.sum(1.0)
@@ -109,7 +109,7 @@ class NEB:
             for i in range(1, self.nimages - 1):
                 root = (i - 1) * size // (self.nimages - 2)
                 world.broadcast(self.energies[i:i], root) # ATH
-                world.broadcast(self.forces[i], root)
+                world.broadcast(self.clean_forces[i], root)
 
     def get_forces(self):
         """Evaluate and return the forces."""
