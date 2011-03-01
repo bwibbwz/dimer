@@ -60,15 +60,40 @@ class second(NEB):
         return self.projected_forces[1:self.nimages-1].reshape((-1, 3))
 
     def calculate_eigenmodes(self):
-        for k in range(1, self.nimages - 1):
+        if not self.parallel:
+            for k in range(1, self.nimages - 1):
+                m = self.first_modes[k]
+                t = self.tangents[k]
+                m = normalize(perpendicular_vector(m, normalize(t)))
+                search = DimerEigenmodeSearch(self.minmodes[k], control = self.control, eigenmode = m, basis = [normalize(t)])
+                search.converge_to_eigenmode()
+                self.first_modes[k] = search.get_eigenmode()
+                self.first_curvatures[k] = search.get_curvature()
+                self.second_modes_calculated[k] = False
+        else:
+            k = self.world.rank * (self.nimages - 2) // self.world.size + 1
             m = self.first_modes[k]
             t = self.tangents[k]
             m = normalize(perpendicular_vector(m, normalize(t)))
             search = DimerEigenmodeSearch(self.minmodes[k], control = self.control, eigenmode = m, basis = [normalize(t)])
-            search.converge_to_eigenmode()
+            try:
+                search.converge_to_eigenmode()
+            except:
+                error = self.world.sum(1.0)
+                raise
+            else:
+                error = self.world.sum(0.0)
+                if error:
+                    raise RuntimeError('Parallel Dimer failed!')
             self.first_modes[k] = search.get_eigenmode()
             self.first_curvatures[k] = search.get_curvature()
-            self.second_modes_calculated[k] = False
+            self.second_modes_calculated[k] = False # NOT USED ANYMORE
+            for k in range(1, self.nimages - 1):
+                root = (k - 1) * self.world.size // (self.nimages - 2)
+                self.world.broadcast(self.first_modes[k], root)
+                self.world.broadcast(self.first_curvatures[k], root)
+                self.world.broadcast(self.second_modes_calculated[k], root)
+                
 
     def invert_eigenmode_forces(self):
         for k in range(1, self.nimages - 1):
