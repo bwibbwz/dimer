@@ -92,7 +92,7 @@ class second(NEB):
             for k in range(1, self.nimages - 1):
                 root = (k - 1) * self.world.size // (self.nimages - 2)
                 self.world.broadcast(self.first_modes[k], root)
-                self.world.broadcast(self.first_curvatures[k], root)
+                self.world.broadcast(self.first_curvatures[k:k], root)
                 self.world.broadcast(self.second_modes_calculated[k], root)
                 
 
