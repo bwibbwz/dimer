@@ -30,6 +30,8 @@ class NEB:
         self.energies = np.zeros(self.nimages)
         self.tangents = np.zeros((self.nimages, self.natoms, 3))
 
+        self.world = world
+
     def interpolate(self, initial=0, final=-1):
         """Interpolate linearly between initial and final images."""
         if final < 0:
