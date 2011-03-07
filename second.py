@@ -12,11 +12,14 @@ class second(NEB):
         self.control = control
         NEB.__init__(self, images, k, climb, parallel)
 
-        self.first_modes = [None]*self.nimages
-        self.second_modes = [None]*self.nimages
-        self.first_curvatures = [None]*self.nimages
-        self.second_curvatures = [None]*self.nimages
-        self.second_modes_calculated = [False]*self.nimages
+#        self.first_modes = [None]*self.nimages
+        self.first_modes = np.zeros((self.nimages, self.natoms, 3))
+#        self.second_modes = [None]*self.nimages
+        self.second_modes = np.zeros((self.nimages, self.natoms, 3))
+#        self.first_curvatures = [None]*self.nimages
+        self.first_curvatures = np.zeros(self.nimages)
+#        self.second_curvatures = [None]*self.nimages
+#        self.second_modes_calculated = [False]*self.nimages
 
         self.dimer_forces = np.zeros((self.nimages, self.natoms, 3))
 
@@ -70,7 +73,7 @@ class second(NEB):
                 search.converge_to_eigenmode()
                 self.first_modes[k] = search.get_eigenmode()
                 self.first_curvatures[k] = search.get_curvature()
-                self.second_modes_calculated[k] = False
+#                self.second_modes_calculated[k] = False
         else:
             k = self.world.rank * (self.nimages - 2) // self.world.size + 1
             m = self.first_modes[k]
@@ -88,12 +91,12 @@ class second(NEB):
                     raise RuntimeError('Parallel Dimer failed!')
             self.first_modes[k] = search.get_eigenmode()
             self.first_curvatures[k] = search.get_curvature()
-            self.second_modes_calculated[k] = False # NOT USED ANYMORE
+#            self.second_modes_calculated[k] = False # NOT USED ANYMORE
             for k in range(1, self.nimages - 1):
                 root = (k - 1) * self.world.size // (self.nimages - 2)
                 self.world.broadcast(self.first_modes[k], root)
                 self.world.broadcast(self.first_curvatures[k:k], root)
-                self.world.broadcast(self.second_modes_calculated[k], root)
+#                self.world.broadcast(self.second_modes_calculated[k], root)
                 
 
     def invert_eigenmode_forces(self):
@@ -101,14 +104,14 @@ class second(NEB):
             f_clean = self.clean_forces[k]
             t = self.tangents[k]
             m1 = self.first_modes[k]
-            m2 = self.second_modes[k]
+#            m2 = self.second_modes[k]
             c1 = self.first_curvatures[k]
-            c2 = self.second_curvatures[k]
+#            c2 = self.second_curvatures[k]
             self.dimer_forces[k] = f_clean - 2 * parallel_vector(f_clean, m1)
             # ATH: Maybe invert both while trying to escape the bad regions
-            if self.second_modes_calculated[k]:
-                self.dimer_forces[k] = self.dimer_forces[k] - 2 * parallel_vector(self.dimer_forces[k], m2)
-                print 'image %i, forces inverted' % k
+#            if self.second_modes_calculated[k]:
+#                self.dimer_forces[k] = self.dimer_forces[k] - 2 * parallel_vector(self.dimer_forces[k], m2)
+#                print 'image %i, forces inverted' % k
             self.clean_forces[k] = self.dimer_forces[k]
 
 # ----------------------------------------------------------------
@@ -117,7 +120,7 @@ class second(NEB):
     def plot_2d_pes(self):
         t  = self.tangents[1:self.nimages - 1]
         m1 = self.first_modes[1:self.nimages - 1]
-        m2 = self.second_modes[1:self.nimages - 1]
+#        m2 = self.second_modes[1:self.nimages - 1]
 
         def make_arrow(pos, orient, c):
             p = pos[-1]
@@ -160,8 +163,8 @@ class second(NEB):
             pylab.arrow(p[k][-1][0], p[k][-1][1], f[k][-1][0], f[k][-1][1], width = 0.02, ec = 'k', fc = 'k')
             make_arrow(p[k], m1[k], 'b')
             make_arrow(p[k], t[k], 'r')
-            if m2[k] is not None and self.second_modes_calculated[k]:
-                make_arrow(p[k], m2[k], 'g')
+#            if m2[k] is not None and self.second_modes_calculated[k]:
+#                make_arrow(p[k], m2[k], 'g')
 #            if eff[k] is not None:
 #                make_arrow(p[k], eff[k], 'k')
             pylab.text(p[k][-1][0], p[k][-1][1] - 0.2, str(k + 1), color = 'k')
