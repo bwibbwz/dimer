@@ -8,3 +8,4 @@
 # NB: Needs to be possible to store only the last eigenmode.
 # NB: Missing multiple displacement_centers and radii and num_atoms.
 
+# NB: Implement a interpolate_eigenmodes() for second
