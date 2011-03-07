@@ -32,6 +32,9 @@ class NEB:
 
         self.world = world
 
+        self.dneb = True
+        self.perp = False
+
     def interpolate(self, initial=0, final=-1):
         """Interpolate linearly between initial and final images."""
         if final < 0:
@@ -160,7 +163,12 @@ class NEB:
                 f_s_dneb = f_s_perp - np.vdot(f_s_perp, f_c_perp) * f_c_perp / norm(f_c_perp)**0.5
 
                 # The output force
-                f_out = f_c_perp + f_s_para + f_s_dneb
+                if self.dneb:
+                    f_out = f_c_perp + f_s_para + f_s_dneb
+                elif self.perp:
+                    f_out = f_c_perp + f_s_para + f_s_perp
+                else:
+                    f_out = f_c_perp + f_s_para
 #                f_out = f_c_perp + f_s_para + f_s_perp
 
             self.projected_forces[i] = f_out.copy()
