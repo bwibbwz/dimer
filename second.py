@@ -36,6 +36,7 @@ class second(NEB):
         self.xVec = None
         self.yVec = None
         self.dev_plot = False # Can be turned on manually
+        self.decouple_modes = False
 
     def get_forces(self):
         """Evaluate and return the forces."""
@@ -69,7 +70,10 @@ class second(NEB):
                 m = self.first_modes[k]
                 t = self.tangents[k]
                 m = normalize(perpendicular_vector(m, normalize(t)))
-                search = DimerEigenmodeSearch(self.minmodes[k], control = self.control, eigenmode = m, basis = [normalize(t)])
+                if self.decouple_modes:
+                    search = DimerEigenmodeSearch(self.minmodes[k], control = self.control, eigenmode = m)
+                else:
+                    search = DimerEigenmodeSearch(self.minmodes[k], control = self.control, eigenmode = m, basis = [normalize(t)])
                 search.converge_to_eigenmode()
                 self.first_modes[k] = search.get_eigenmode()
                 self.first_curvatures[k] = search.get_curvature()
@@ -107,12 +111,13 @@ class second(NEB):
 #            m2 = self.second_modes[k]
             c1 = self.first_curvatures[k]
 #            c2 = self.second_curvatures[k]
-            self.dimer_forces[k] = f_clean - 2 * parallel_vector(f_clean, m1)
+            if not self.climb or k == self.imax or True:
+                self.dimer_forces[k] = f_clean - 2 * parallel_vector(f_clean, m1)
             # ATH: Maybe invert both while trying to escape the bad regions
 #            if self.second_modes_calculated[k]:
 #                self.dimer_forces[k] = self.dimer_forces[k] - 2 * parallel_vector(self.dimer_forces[k], m2)
 #                print 'image %i, forces inverted' % k
-            self.clean_forces[k] = self.dimer_forces[k]
+                self.clean_forces[k] = self.dimer_forces[k]
 
 # ----------------------------------------------------------------
 # --------------- Outdated and development methods ---------------
@@ -186,7 +191,8 @@ class second(NEB):
         else:
             animate = str(self.animate)
 
-        pylab.savefig('_rass-' + animate + '.png')
+#        pylab.savefig('_rass-' + animate + '.png')
+        pylab.savefig('_rass-' + animate + '.svg')
 
         pylab.draw()
         pylab.close()

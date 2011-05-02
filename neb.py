@@ -34,6 +34,7 @@ class NEB:
 
         self.dneb = True
         self.perp = False
+        self.second_NEB = False
 
     def interpolate(self, initial=0, final=-1):
         """Interpolate linearly between initial and final images."""
@@ -62,7 +63,7 @@ class NEB:
             image.set_positions(positions[n1:n2])
             n1 = n2
 
-    def update_tangents(self):
+    def update_tangents_OLD(self):
         images = self.images
         tangent_m = images[1].get_positions() - images[0].get_positions()
         for i in range(1, self.nimages - 1):
@@ -88,6 +89,13 @@ class NEB:
                             np.vdot(tangent_p, tangent_p)**0.5) / 2.0
             self.tangents[i] = tangent
             tangent_m = tangent_p
+
+    def update_tangents_NEW(self):
+        pass
+
+    def update_tangents(self):
+        self.update_tangents_OLD()
+
 
     def calculate_energies_and_forces(self):
         images = self.images
@@ -162,6 +170,26 @@ class NEB:
 #                f_s_old = np.vdot(t_p - t_m, t) * k * t / nt**2
                 f_s_dneb = f_s_perp - np.vdot(f_s_perp, f_c_perp) * f_c_perp / norm(f_c_perp)**0.5
 
+                f_s_new = k * (norm(t_p) - norm(t_m)) * normalize(t)
+
+                #print i
+                #print f_s_dneb[-1], norm(f_s_dneb)
+                if self.second_NEB: # TESTING ???
+                    m = self.first_modes[i]
+                    tf = (np.vdot(f_s_dneb, (t / nt)))
+                    mf = (np.vdot(f_s_dneb, m))
+                    f_s_dneb = tf * t / nt + mf * m
+                    tf = (np.vdot(f_s_perp, (t / nt)))
+                    mf = (np.vdot(f_s_perp, m))
+                    f_s_perp = tf * t / nt + mf * m
+                    bla = f_s_perp
+                    if self.dneb:
+                        bla = f_s_dneb
+                else:
+                    bla = None
+                #print f_s_dneb[-1], norm(f_s_dneb)
+                #print '-'*30
+
                 # The output force
                 if self.dneb:
                     f_out = f_c_perp + f_s_para + f_s_dneb
@@ -170,6 +198,17 @@ class NEB:
                 else:
                     f_out = f_c_perp + f_s_para
 #                f_out = f_c_perp + f_s_para + f_s_perp
+
+                if bla is not None:
+                    f_out = f_c_perp + f_s_new + bla
+                else:
+                    if self.perp:
+                        f_out = f_c_perp + f_s_new + f_s_perp
+                    elif self.dneb:
+                        f_out = f_c_perp + f_s_new + f_s_dneb
+                    else:
+                        f_out = f_c_perp + f_s_new
+
 
             self.projected_forces[i] = f_out.copy()
 
