@@ -45,7 +45,7 @@ class second(NEB):
         self.calculate_energies_and_forces()
 
         # Update the highest energy image
-        self.imax = np.argsort(self.energies)[-1]
+        self.imax = 1 + np.argsort(self.energies[1:-1])[-1]
         self.emax = self.energies[self.imax]
 
         # Calculate the tangents of all the images
