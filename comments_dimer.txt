@@ -9,3 +9,4 @@
 # NB: Missing multiple displacement_centers and radii and num_atoms.
 
 # NB: Implement a interpolate_eigenmodes() for second
+# BUG: if eigenmodes are inserted manually, ensure they're length is unity.
