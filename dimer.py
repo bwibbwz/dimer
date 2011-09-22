@@ -508,14 +508,6 @@ class MinModeAtoms:
         The seed used for the random number generator. Defaults to
         modified version the current time.
 
-    References:
-
-    .. [1] Henkelman and Jonsson, JCP 111, 7010 (1999)
-    .. [2] Olsen, Kroes, Henkelman, Arnaldsson, and Jonsson, JCP 121,
-           9776 (2004).
-    .. [3] Heyden, Bell, and Keil, JCP 123, 224101 (2005).
-    .. [4] Kastner and Sherwood, JCP 128, 014106 (2008).
-
     """
     def __init__(self, atoms, control=None, eigenmodes=None, random_seed=None, **kwargs):
         self.minmode_init = True
