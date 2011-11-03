@@ -131,7 +131,7 @@ class NEB:
         self.update_tangents()
 
         # Prjoect the forces for each image
-        self.neb_forces()
+        self.project_forces()
 
         return self.neb_forces[1:self.nimages-1].reshape((-1, 3))
 
@@ -150,7 +150,7 @@ class NEB:
                 p_p = self.images[i + 1].get_positions()
                 nt_m = np.vdot(p - p_m, p - p_m)**0.5
                 nt_p = np.vdot(p_p - p, p_p - p)**0.5
-                f_s = (nt_p, nt_m) * self.k * t # NB: Need to implement variable k
+                f_s = (nt_p - nt_m) * self.k * t # NB: Need to implement variable k
                 self.neb_forces[i] = f_r_perp + f_s
 
     def get_potential_energy(self):
