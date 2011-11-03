@@ -21,7 +21,7 @@ class NEB:
         self.parallel = parallel
         self.natoms = len(images[0])
 
-        # Make sure all the iamges are of even length.
+        # Make sure all the images are of even length.
         # NB: This test should be more elaborate and include species and possible strangeness in the path.
         assert [len(images[0]) for _ in images] == [len(img) for img in images] 
 
