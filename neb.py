@@ -20,6 +20,11 @@ class NEB:
         self.climb = climb
         self.parallel = parallel
         self.natoms = len(images[0])
+
+        # Make sure all the iamges are of even length.
+        # NB: This test should be more elaborate and include species and possible strangeness in the path.
+        assert [len(images[0]) for _ in images] == [len(img) for img in images] 
+
         self.nimages = len(images)
         self.emax = np.nan
         self.imax = None
@@ -31,10 +36,6 @@ class NEB:
         self.tangents = np.zeros((self.nimages, self.natoms, 3))
 
         self.world = world
-
-        self.dneb = True
-        self.perp = False
-        self.second_NEB = False
 
     def interpolate(self, initial=0, final=-1):
         """Interpolate linearly between initial and final images."""
@@ -63,39 +64,31 @@ class NEB:
             image.set_positions(positions[n1:n2])
             n1 = n2
 
-    def update_tangents_OLD(self):
+    def update_tangents(self):
         images = self.images
-        tangent_m = images[1].get_positions() - images[0].get_positions()
+        t_m = images[1].get_positions() - images[0].get_positions()
         for i in range(1, self.nimages - 1):
-            tangent_p = (images[i + 1].get_positions() - \
-                         images[i].get_positions())
-            if i < self.imax:
-                tangent = tangent_p
-            elif i > self.imax:
-                tangent = tangent_m
+            t_p = (images[i + 1].get_positions() - images[i].get_positions())
+            e = self.energies[i]
+            e_m = self.energies[i - 1]
+            e_p = self.energies[i + 1]
+            # NB: Check the below definition, it might have been flipped to use the lower energy tangent.
+            if e < e_m and e > e_p:
+                t = t_m
+            elif e > e_m and e < e_p:
+                t = t_p
             else:
                 # BUG: Possible error when end images become highest.
-                ei = self.energies[i]
-                eim = self.energies[i - 1]
-                eip = self.energies[i + 1]
-                eimax = max(abs(eip - ei), abs(eim - ei))
-                eimin = min(abs(eip - ei), abs(eim - ei))
-                if eip > eim:
-                    tangent = tangent_p * eimax + tangent_m * eimin
+                e_max = max(abs(e_p - e), abs(e_m - e))
+                e_min = min(abs(e_p - e), abs(e_m - e))
+                if e_p > e_m:
+                    t = t_p * e_max + t_m * e_min
                 else:
-                    tangent = tangent_p * eimin + tangent_m * eimax
-                tangent /= np.vdot(tangent, tangent)**0.5
-                tangent *= (np.vdot(tangent_m, tangent_m)**0.5 + \
-                            np.vdot(tangent_p, tangent_p)**0.5) / 2.0
-            self.tangents[i] = tangent
-            tangent_m = tangent_p
-
-    def update_tangents_NEW(self):
-        pass
-
-    def update_tangents(self):
-        self.update_tangents_OLD()
-
+                    t = t_p * e_min + t_m * e_max
+                t /= np.vdot(t, t)**0.5
+                t *= (np.vdot(t_m, t_m)**0.5 + np.vdot(t_p, t_p)**0.5) / 2.0
+            self.tangents[i] = t
+            t_m = t_p
 
     def calculate_energies_and_forces(self):
         images = self.images
