@@ -2,6 +2,7 @@ from math import sqrt, cos, pi
 
 import numpy as np
 
+from numpy import cos, sin, pi
 from ase.parallel import world, rank, size
 from ase.neb import NEB
 from ase.dimer import normalize, DimerEigenmodeSearch, MinModeAtoms, perpendicular_vector
@@ -140,14 +141,42 @@ class second(NEB):
         i = p.pop(0)
 
         import pylab
-        pylab.axes()
+        fig = pylab.figure(figsize=(9, 9))
+#        fig.add_axes(pylab.Axes(fig, [0.0, 0.0, 0.0, 0.0]))
+        ax = pylab.axes()
+        fig.set(transform=fig.transFigure, figure=fig)
+        
 
+        def adjust_spines(ax,spines):
+            for loc, spine in ax.spines.iteritems():
+                if loc in spines:
+                    spine.set_position(('outward',10)) # outward by 10 points
+                    spine.set_smart_bounds(True)
+                else:
+                    spine.set_color('none') # don't draw spine
+        
+            # turn off ticks where there is no spine
+            if 'left' in spines:
+                ax.yaxis.set_ticks_position('left')
+            else:
+                # no yaxis ticks
+                ax.yaxis.set_ticks([])
+        
+            if 'bottom' in spines:
+                ax.xaxis.set_ticks_position('bottom')
+            else:
+                # no xaxis ticks
+                ax.xaxis.set_ticks([])
+
+        adjust_spines(ax, [])
+
+        
         # Plot the static stuff
-        cir = pylab.Circle((i[-1][0], i[-1][1]), radius = 0.25, fc = 'y')
+        cir = pylab.Circle((i[-1][0], i[-1][1]), radius = 0.15, fc = 'y')
         pylab.gca().add_patch(cir)
-        cir = pylab.Circle((f[-1][0], f[-1][1]), radius = 0.25, fc = 'y')
+        cir = pylab.Circle((f[-1][0], f[-1][1]), radius = 0.15, fc = 'y')
         pylab.gca().add_patch(cir)
-        pylab.plot(i[-1][0], f[-1][1], 'kx')
+#        pylab.plot(i[-1][0], f[-1][1], 'kx')
 
         f = self.projected_forces[1:self.nimages-1]
         cf = self.clean_forces[1:self.nimages-1] # This is the Dimer force
@@ -155,16 +184,30 @@ class second(NEB):
         rf = cf.copy()
         for k in range(1, self.nimages - 1):
             rf[k-1] = self.images[k].get_forces()
-
         # Plot the band
         for k in range(len(p)):
-            if k + 1 == self.imax:
-                cir = pylab.Circle((p[k][-1][0], p[k][-1][1]), radius = 0.3, fc = 'c')
+          if k%2 == 0:
+            an = np.linspace(0, 2 * pi, 100)
+            can = cos(an)
+            san = sin(an)
+            for ka in range(len(an)):
+                can[ka] *= 0.2
+                can[ka] += p[k][-1][0]
+                san[ka] *= 0.2
+                san[ka] += p[k][-1][1]
+
+            pylab.plot(can, san, 'k:', zorder = -1)
+#            cir = pylab.Circle((p[k][-1][0], p[k][-1][1]), radius = 0.2, fc = 'y')
+#            pylab.gca().add_patch(cir)
+        for k in range(len(p)):
+          if k%2 != 0:
+            if k + 1 == self.imax and self.climb:
+                cir = pylab.Circle((p[k][-1][0], p[k][-1][1]), radius = 0.2, fc = 'c')
             else:
-                cir = pylab.Circle((p[k][-1][0], p[k][-1][1]), radius = 0.3, fc = 'y')
+                cir = pylab.Circle((p[k][-1][0], p[k][-1][1]), radius = 0.2, fc = 'y')
             pylab.gca().add_patch(cir)
-            pylab.arrow(p[k][-1][0], p[k][-1][1], rf[k][-1][0], rf[k][-1][1], width = 0.02, ec = 'r', fc = 'r')
-            pylab.arrow(p[k][-1][0], p[k][-1][1], cf[k][-1][0], cf[k][-1][1], width = 0.02, ec = 'g', fc = 'g')
+            pylab.arrow(p[k][-1][0], p[k][-1][1], rf[k][-1][0], rf[k][-1][1], width = 0.02, ec = 'k', fc = 'w')
+#            pylab.arrow(p[k][-1][0], p[k][-1][1], cf[k][-1][0], cf[k][-1][1], width = 0.02, ec = 'g', fc = 'g')
             pylab.arrow(p[k][-1][0], p[k][-1][1], f[k][-1][0], f[k][-1][1], width = 0.02, ec = 'k', fc = 'k')
             make_arrow(p[k], m1[k], 'b')
             make_arrow(p[k], t[k], 'r')
@@ -172,13 +215,17 @@ class second(NEB):
 #                make_arrow(p[k], m2[k], 'g')
 #            if eff[k] is not None:
 #                make_arrow(p[k], eff[k], 'k')
-            pylab.text(p[k][-1][0], p[k][-1][1] - 0.2, str(k + 1), color = 'k')
-            if self.climb:
-                pylab.text(2.0, 2.0, 'C', color = 'k')
-
+#            pylab.text(p[k][-1][0], p[k][-1][1] - 0.2, str(k + 1), color = 'k')
+#            if self.climb:
+#                pylab.text(2.0, 2.0, 'C', color = 'k')
+        
+        ax.patch.set_facecolor('green')
+        ax.patch.set_transform(fig.transFigure)
+        ax.patch.set_visible(False)
         # Plot the contour
         if self.enMat is not None:
-            pylab.contourf(self.yVec, self.xVec, self.enMat, 30, antialiased = True)
+#            pylab.contourf(self.xVec, self.yVec, self.enMat, 30, antialiased = True)
+            pylab.contourf(self.xVec, self.yVec, self.enMat, 30, zorder = -2, transform = fig.transFigure, figure = fig)
 
         pylab.axis('scaled')
 
@@ -191,11 +238,34 @@ class second(NEB):
         else:
             animate = str(self.animate)
 
-#        pylab.savefig('_rass-' + animate + '.png')
-        pylab.savefig('_rass-' + animate + '.svg')
+#        fig.canvas.print_svg('_rass' + animate + '.svg', edgecolor = 'none', facecolor = 'none')
 
-        pylab.draw()
-        pylab.close()
+#        fig.axes[0].set_axes_bg_color('green')
+
+#        fig.canvas.set_visible(False)
+#        print fig.artists
+#        print fig.canvas
+#        print ax.margins()
+#        print ax.patch.get_xy()
+
+
+#        ax.axes.get_xaxis().set_visible(False)
+#        ax.axes.get_yaxis().set_visible(False)
+
+#        pylab.savefig('_rass-' + animate + '.png')
+#        pylab.savefig('_rass-' + animate + '.svg')
+
+#        fig.canvas.draw()
+#        pylab.draw()
+        pylab.savefig('_rass' + animate + '.svg', dpi = 300, facecolor = 'none', edgecolor = 'none', bbox_inches = 'tight', pad_inches = 0.0)
+#        pylab.close()
+#        pylab.draw()
+#        pylab.savefig('_rass' + animate + '.png', dpi = 300, facecolor = 'none', edgecolor = 'none', bbox_inches = 'tight', pad_inches = 0.0)
+#        pylab.savefig('_rass' + animate + '.png', format = 'png', bbox_inches = 'tight', facecolor = 'none', pad_inches = 0.5)
+#        pylab.close()
+
+#        pylab.draw()
+#        pylab.close()
 #        pylab.show()
 
         # Plot the contour
