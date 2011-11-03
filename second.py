@@ -13,14 +13,9 @@ class second(NEB):
         self.control = control
         NEB.__init__(self, images, k, climb, parallel)
 
-#        self.first_modes = [None]*self.nimages
         self.first_modes = np.zeros((self.nimages, self.natoms, 3))
-#        self.second_modes = [None]*self.nimages
         self.second_modes = np.zeros((self.nimages, self.natoms, 3))
-#        self.first_curvatures = [None]*self.nimages
         self.first_curvatures = np.zeros(self.nimages)
-#        self.second_curvatures = [None]*self.nimages
-#        self.second_modes_calculated = [False]*self.nimages
 
         self.dimer_forces = np.zeros((self.nimages, self.natoms, 3))
 
