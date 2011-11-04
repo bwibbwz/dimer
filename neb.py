@@ -35,6 +35,7 @@ class NEB:
         self.forces = {}
         self.forces['real'] = np.zeros((self.nimages, self.natoms, 3))
         self.forces['neb'] = np.zeros((self.nimages, self.natoms, 3))
+        self.forces['spring'] = np.zeros((self.nimages, self.natoms, 3))
         self.energies = np.zeros(self.nimages)
         self.tangents = np.zeros((self.nimages, self.natoms, 3))
 

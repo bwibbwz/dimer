@@ -8,15 +8,14 @@ from ase.dimer import normalize, DimerEigenmodeSearch, MinModeAtoms, perpendicul
 from ase.dimer import norm, parallel_vector, DimerControl
 
 class second(NEB):
-    def __init__(self, images, control, k=0.1, climb=False, parallel=False):
+    def __init__(self, images, control, k=1.0, climb=False, parallel=False):
         self.control = control
         NEB.__init__(self, images, k, climb, parallel)
 
-        self.first_modes = np.zeros((self.nimages, self.natoms, 3))
-        self.second_modes = np.zeros((self.nimages, self.natoms, 3))
-        self.first_curvatures = np.zeros(self.nimages)
+        self.modes = np.zeros((self.nimages, self.natoms, 3))
+        self.curvatures = np.zeros(self.nimages)
 
-        self.dimer_forces = np.zeros((self.nimages, self.natoms, 3))
+        self.forces['dimer'] = np.zeros((self.nimages, self.natoms, 3))
 
         self.minmodes = []
         for k in range(self.nimages):
