@@ -141,7 +141,7 @@ class NEB:
         for i in range(1, self.nimages - 1):
             t = ts[i] / np.vdot(ts[i], ts[i])**0.5
             f_r = self.forces['real'][i].copy()
-            f_r_para = np.vdot(f_r, t)
+            f_r_para = np.vdot(f_r, t) * t
             f_r_perp = f_r - f_r_para
             if self.climb and i == self.imax:
                 self.forces['neb'][i] = f_r - 2 * f_r_para
