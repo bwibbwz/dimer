@@ -14,8 +14,10 @@ from ase.io import read
 from ase.dimer import normalize, norm
 
 class NEB:
-    def __init__(self, images, k=0.1, climb=False, parallel=False):
+    def __init__(self, images, k=1.0, climb=False, parallel=False):
         self.images = images
+
+        # NB: Need support for variable spring constants
         self.k = k
         self.climb = climb
         self.parallel = parallel
@@ -30,12 +32,11 @@ class NEB:
         self.imax = None
 
         # Set up empty arrays to store forces, energies and tangents
-        self.real_forces = np.zeros((self.nimages, self.natoms, 3))
-        self.neb_forces = np.zeros((self.nimages, self.natoms, 3))
+        self.forces = {}
+        self.forces['real'] = np.zeros((self.nimages, self.natoms, 3))
+        self.forces['neb'] = np.zeros((self.nimages, self.natoms, 3))
         self.energies = np.zeros(self.nimages)
         self.tangents = np.zeros((self.nimages, self.natoms, 3))
-
-        self.world = world
 
     def interpolate(self, initial=0, final=-1):
         """Interpolate linearly between initial and final images."""
@@ -97,13 +98,13 @@ class NEB:
             # Do all images - one at a time:
             for i in range(1, self.nimages - 1):
                 self.energies[i] = images[i].get_potential_energy()
-                self.real_forces[i] = images[i].get_forces()
+                self.forces['real'][i] = images[i].get_forces()
         else:
             # Parallelize over images:
             i = rank * (self.nimages - 2) // size + 1
             try:
                 self.energies[i] = images[i].get_potential_energy()
-                self.real_forces[i] = images[i].get_forces()
+                self.forces['real'][i] = images[i].get_forces()
             except:
                 # Make sure other images also fail:
                 error = world.sum(1.0)
@@ -115,7 +116,7 @@ class NEB:
             for i in range(1, self.nimages - 1):
                 root = (i - 1) * size // (self.nimages - 2)
                 world.broadcast(self.energies[i:i], root) # ATH
-                world.broadcast(self.real_forces[i], root)
+                world.broadcast(self.forces['real'][i], root)
 
     def get_forces(self):
         """Evaluate and return the forces."""
@@ -133,17 +134,17 @@ class NEB:
         # Prjoect the forces for each image
         self.project_forces()
 
-        return self.neb_forces[1:self.nimages-1].reshape((-1, 3))
+        return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def project_forces(self):
         ts = self.tangents
         for i in range(1, self.nimages - 1):
             t = ts[i] / np.vdot(ts[i], ts[i])**0.5
-            f_r = self.real_forces[i].copy()
+            f_r = self.forces['real'][i].copy()
             f_r_para = np.vdot(f_r, t)
             f_r_perp = f_r - f_r_para
             if self.climb and i == self.imax:
-                self.neb_forces[i] = f_r - 2 * f_r_para
+                self.forces['neb'][i] = f_r - 2 * f_r_para
             else:
                 p_m = self.images[i - 1].get_positions()
                 p = self.images[i].get_positions()
@@ -151,7 +152,7 @@ class NEB:
                 nt_m = np.vdot(p - p_m, p - p_m)**0.5
                 nt_p = np.vdot(p_p - p, p_p - p)**0.5
                 f_s = (nt_p - nt_m) * self.k * t # NB: Need to implement variable k
-                self.neb_forces[i] = f_r_perp + f_s
+                self.forces['neb'][i] = f_r_perp + f_s
 
     def get_potential_energy(self):
         return self.emax
