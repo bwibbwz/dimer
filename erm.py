@@ -7,22 +7,51 @@ from ase.neb import NEB
 from ase.dimer import normalize, DimerEigenmodeSearch, MinModeAtoms, perpendicular_vector
 from ase.dimer import norm, parallel_vector, DimerControl
 
-class second(NEB):
-    def __init__(self, images, control, k=1.0, climb=False, parallel=False):
+class ERM(NEB):
+    def __init__(self, images, control, k=1.0, climb=False, parallel=False, minmodes=None):
         self.control = control
         NEB.__init__(self, images, k, climb, parallel)
 
-        self.modes = np.zeros((self.nimages, self.natoms, 3))
+        self.minmodes = np.zeros((self.nimages, self.natoms, 3))
         self.curvatures = np.zeros(self.nimages)
 
         self.forces['dimer'] = np.zeros((self.nimages, self.natoms, 3))
 
-        self.minmodes = []
-        for k in range(self.nimages):
-            m = MinModeAtoms(images[k], control)
-            m.initialize_eigenmodes() # ATH, should be perp. to tangent
-            self.first_modes[k] = m.get_eigenmode()
-            self.minmodes += [m]
+        # Populate the tangents
+        for k in range(1, self.nimages - 1):
+            p_m = self.images[k - 1].get_positions()
+            p_p = self.images[k + 1].get_positions()
+            t = (p_p - p_m) / 2.0
+            self.tangents[k] = t
+        self.tangents[0] = t
+        self.tangents[-1] = -t
+
+        # Set up the initial minimum modes
+        if minmodes is None:
+            for k in range(self.nimages):
+                m = MinModeAtoms(self.images[k], control)
+                m.initialize_eigenmodes()
+                self.minmodes[k] = m.get_eigenmode()
+        else:
+            if len(minmodes) == self.nimages and len(minmodes[0]) == self.natoms and len(minmodes[0][0]) == 3:
+                # Assume one minmode for each image
+                raise NotImplementedError()
+            elif len(minmodes) == 2 and len(minmodes[0]) == self.natoms and len(minmodes[0][0]) == 3:
+                # Assume end images minmodes and interpolate
+                raise NotImplementedError()
+            elif len(minmodes) == self.natoms and len(minmodes[0]) == 3:
+                # Assume the same minmode for all images
+                raise NotImplementedError()
+            else:
+                raise ValueError('ERM did not understand the minmodes given to it.')
+
+        # Ensure orthogonality
+        for k_img in range(self.nimages):
+            t = self.tangents[k_img]
+            nt = normalize(t)
+            m = self.minmodes[k_img]
+            m -= np.vdot(m, nt) * nt
+            m = normalize(m)
 
         # ATH DEV
         self.animate = 0
