@@ -66,6 +66,14 @@ class ERM(NEB):
         # These should be user variables
         self.decouple_modes = False # Release the orthogonality constraint of the minmode and tanget.
 
+        # Development stuff
+        self.plot_devplot = True
+        self.plot_subplot = False
+        self.plot_animate = 0
+        self.plot_x = None
+        self.plot_y = None
+        self.plot_e = None
+
     def get_forces(self):
         """Evaluate and return the forces."""
 
@@ -88,8 +96,8 @@ class ERM(NEB):
         # Prjoect the forces for each image
         self.invert_eigenmode_forces()
         self.project_forces()
-#        if self.dev_plot:
-#            self.plot_2d_pes()
+        if self.plot_devplot:
+            self.plot_pseudo_3d_pes()
         self.control.increment_counter('optcount')
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
@@ -142,94 +150,136 @@ class ERM(NEB):
 # ----------------------------------------------------------------
 # --------------- Outdated and development methods ---------------
 # ----------------------------------------------------------------
-    def plot_2d_pes(self):
-        pass
+    def plot_pseudo_3d_pes(self):
+        import pylab as plt
+        from pylab import subplot, subplot2grid
+        fig = plt.figure(figsize = (8,8))
+        if self.plot_subplot:
+            plt.axes()
+            ax1 = subplot2grid((4, 1), (0, 0), rowspan = 3)
+            ax2 = subplot2grid((4, 1), (3, 0), axisbg = 'y')
+            ax2_base_scale = 0.00000002
 
-    def plot_2d_pes_OLD(self):
-        t  = self.tangents[1:self.nimages - 1]
-        m1 = self.first_modes[1:self.nimages - 1]
-#        m2 = self.second_modes[1:self.nimages - 1]
+        else:
+            plt.axes()
+            ax1 = subplot(111)
+            ax2 = None
 
-        def make_arrow(pos, orient, c):
+        def make_line(pos, orient, c, size=0.2, width=1, dim=[0, 1], ax=plt):
             p = pos[-1]
             o = orient[-1]
-            pylab.arrow(p[0] + o[0]*0.2, p[1] + o[1]*0.2, o[0]*-0.4, o[1]*-0.4, width = 0.001, ec = c, fc = c)
-            pylab.arrow(p[0] - o[0]*0.2, p[1] - o[1]*0.2, o[0]*0.4, o[1]*0.4, width = 0.001, ec = c, fc = c)
+            d1 = dim[0]
+            d2 = dim[1]
+            ax.plot((p[d1] - o[d1] * size, p[d1] + o[d1] * size), (p[d2] - o[d2] * size, p[d2] + o[d2] * size), c, lw = width)
 
-        p = []
-        for img in self.images:
-            p += [img.get_positions()]
-        f = p.pop()
-        i = p.pop(0)
-
-        import pylab
-        pylab.axes()
-
-        # Plot the static stuff
-        cir = pylab.Circle((i[-1][0], i[-1][1]), radius = 0.25, fc = 'y')
-        pylab.gca().add_patch(cir)
-        cir = pylab.Circle((f[-1][0], f[-1][1]), radius = 0.25, fc = 'y')
-        pylab.gca().add_patch(cir)
-        pylab.plot(i[-1][0], f[-1][1], 'kx')
-
-        f = self.projected_forces[1:self.nimages-1]
-        cf = self.clean_forces[1:self.nimages-1] # This is the Dimer force
-#        rf = self.nodimer_forces[1:self.nimages-1] # ATH, missing
-        rf = cf.copy()
-        for k in range(1, self.nimages - 1):
-            rf[k-1] = self.images[k].get_forces()
-
-        # Plot the band
-        for k in range(len(p)):
-            if k + 1 == self.imax:
-                cir = pylab.Circle((p[k][-1][0], p[k][-1][1]), radius = 0.3, fc = 'c')
+        def make_arrow(pos, end, c, scale=1.0, width=1, dim=[0,1], ax=plt, head_scale=0.9, base_scale=0.6):
+            x = head_scale
+            if ax == ax2:
+                y = ax2_base_scale
             else:
-                cir = pylab.Circle((p[k][-1][0], p[k][-1][1]), radius = 0.3, fc = 'y')
-            pylab.gca().add_patch(cir)
-            pylab.arrow(p[k][-1][0], p[k][-1][1], rf[k][-1][0], rf[k][-1][1], width = 0.02, ec = 'r', fc = 'r')
-            pylab.arrow(p[k][-1][0], p[k][-1][1], cf[k][-1][0], cf[k][-1][1], width = 0.02, ec = 'g', fc = 'g')
-            pylab.arrow(p[k][-1][0], p[k][-1][1], f[k][-1][0], f[k][-1][1], width = 0.02, ec = 'k', fc = 'k')
-            make_arrow(p[k], m1[k], 'b')
-            make_arrow(p[k], t[k], 'r')
-#            if m2[k] is not None and self.second_modes_calculated[k]:
-#                make_arrow(p[k], m2[k], 'g')
-#            if eff[k] is not None:
-#                make_arrow(p[k], eff[k], 'k')
-            pylab.text(p[k][-1][0], p[k][-1][1] - 0.2, str(k + 1), color = 'k')
-            if self.climb:
-                pylab.text(2.0, 2.0, 'C', color = 'k')
+                y = base_scale
+            p = pos[-1]
+            e = end[-1]
+            d1 = dim[0]
+            d2 = dim[1]
 
-        # Plot the contour
-        if self.enMat is not None:
-            pylab.contourf(self.yVec, self.xVec, self.enMat, 30, antialiased = True)
+            p1 = p[d1]
+            p2 = p[d2]
 
-        pylab.axis('scaled')
+            e1 = e[d1] * scale + p1
+            e2 = e[d2] * scale + p2
 
-        if self.animate < 10:
-            animate = '000' + str(self.animate)
-        elif self.animate < 100:
-            animate = '00' + str(self.animate)
-        elif self.animate < 1000:
-            animate = '0' + str(self.animate)
+            a1 = p1 * (1 - x) + x * e1
+            a2 = p2 * (1 - x) + x * e2
+
+            b1 = a1 + (a2 - e2)
+            b2 = a2 - (a1 - e1)
+
+            c1 = a1 - (a2 - e2)
+            c2 = a2 + (a1 - e1)
+
+            b1 = a1 * (1 - y) + y * b1
+            b2 = a2 * (1 - y) + y * b2
+
+            c1 = a1 * (1 - y) + y * c1
+            c2 = a2 * (1 - y) + y * c2
+
+            ax.plot((p1, e1), (p2, e2), 'k', lw = width + 1)
+            ax.plot((b1, e1, c1), (b2, e2, c2), 'k', lw = width + 1)
+            ax.plot((p1, e1), (p2, e2), c, lw = width)
+            ax.plot((b1, e1, c1), (b2, e2, c2), c, lw = width)
+
+        def make_circle(pos, r, c, dim=[0, 1], ax=plt):
+            p = pos[-1]
+            d1 = dim[0]
+            d2 = dim[1]
+            ax.plot((p[d1]), (p[d2]), '%s.' % c, markersize = r)
+
+        n = self.nimages
+        ts = self.tangents
+        ms = []
+        ps = []
+        for i in range(n):
+            ms.append(self.images[i].get_eigenmode())
+            ps.append(self.images[i].get_positions())
+        f_rs = self.forces['real']
+        f_ds = self.forces['dimer']
+        f_ns = self.forces['neb']
+
+#        ax1.text(0.6, 0.6, self.phase, color = 'k')
+        for i in range(n):
+            p = ps[i]
+            t = normalize(ts[i]) * 0.25
+            m = normalize(ms[i]) * 0.25
+            f_r = f_rs[i]
+            f_d = f_ds[i]
+            f_n = f_ns[i]
+            if i in [0, n - 1]:
+                make_circle(p, 20.0, 'y', ax = ax1)
+            else:
+                if self.climb and i == self.imax:
+                    make_circle(p, 35.0, 'c', ax = ax1)
+                else:
+                    make_circle(p, 35.0, 'y', ax = ax1)
+                make_line(p, t, 'b', ax = ax1)
+                make_line(p, m, 'r', ax = ax1)
+                make_arrow(p, f_r, 'w', ax = ax1)
+                make_arrow(p, f_d, 'b', ax = ax1)
+                make_arrow(p, f_n, 'k', ax = ax1)
+
+        if self.plot_e is not None:
+            ax1.contourf(self.plot_x, self.plot_y, self.plot_e, 30)
+
+        if self.plot_animate < 10:
+            animate = '000' + str(self.plot_animate)
+        elif self.plot_animate < 100:
+            animate = '00' + str(self.plot_animate)
+        elif self.plot_animate < 1000:
+            animate = '0' + str(self.plot_animate)
         else:
-            animate = str(self.animate)
+            animate = str(self.plot_animate)
 
-#        pylab.savefig('_rass-' + animate + '.png')
-        pylab.savefig('_rass-' + animate + '.svg')
+        axis1 = ax1.get_axes()
+        if self.plot_e is not None:
+            axis1.set_xlim(xmin = min(self.plot_x), xmax = max(self.plot_x))
+            axis1.set_ylim(ymin = min(self.plot_y), ymax = max(self.plot_y))
+        else:
+            axis1.set_xlim(xmin = 0.0, xmax = 5.0)
+            axis1.set_ylim(ymin = 0.0, ymax = 5.0)
 
-        pylab.draw()
-        pylab.close()
-#        pylab.show()
+        if self.plot_subplot:
+            axis2 = ax2.get_axes()
+            if self.plot_e is not None:
+                axis2.set_xlim(xmin = min(self.plot_x), xmax = max(self.plot_x))
+            else:
+                axis2.set_xlim(xmin = 0.0, xmax = 5.0)
+            axis2.set_ylim(ymin = -3.0e-9, ymax = 3.0e-9)
 
-        # Plot the contour
-#        if self.enMat is not None:
-#            pylab.contourf(self.yVec, self.xVec, self.enMat, 30, antialiased = True)
-#        pylab.axis('scaled')
+        plt.savefig('_fig-' + animate + '.png')
+#        plt.savefig('_fig-' + animate + '.svg')
 
-#        pylab.savefig('_rass-' + animate + '.pdf')
-
-#        pylab.draw()
-#        pylab.close()
-
-        self.animate += 1
+        plt.draw()
+        plt.close()
+#        plt.show()
+        self.plot_animate += 1
 
