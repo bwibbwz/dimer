@@ -515,12 +515,13 @@ class MinModeAtoms:
         modified version the current time.
 
     """
-    def __init__(self, atoms, control=None, eigenmodes=None, random_seed=None, **kwargs):
+    def __init__(self, atoms, control=None, eigenmodes=None, basis=None, random_seed=None, **kwargs):
         self.minmode_init = True
         self.atoms = atoms
 
         # Initialize to None to avoid strange behaviour due to __getattr__
         self.eigenmodes = eigenmodes
+        self.basis = basis
         self.curvatures = None
 
         if control is None:
@@ -687,7 +688,7 @@ class MinModeAtoms:
             if k > 0:
                 self.ensure_eigenmode_orthogonality(k + 1)
             search = DimerEigenmodeSearch(self, self.control, \
-                eigenmode = self.eigenmodes[k], basis = self.eigenmodes[:k])
+                eigenmode = self.eigenmodes[k], basis = [self.eigenmodes[:k], self.basis])
             search.converge_to_eigenmode()
             search.set_up_for_optimization_step()
             self.eigenmodes[k] = search.get_eigenmode()
@@ -741,6 +742,9 @@ class MinModeAtoms:
         """Return the current eigenmode guess."""
         return self.eigenmodes[order - 1]
 
+    def get_basis(self):
+        return self.basis
+
     def get_atoms(self):
         """Return the unextended Atoms object."""
         return self.atoms
@@ -756,6 +760,9 @@ class MinModeAtoms:
     def set_curvature(self, curvature, order=1):
         """Set the eigenvalue estimate."""
         self.curvatures[order - 1] = curvature
+
+    def set_basis(self, basis):
+        self.basis = basis
 
     # Pipe all the stuff from Atoms that is not overwritten.
     # Pipe all requests for get_original_* to self.atoms0.
