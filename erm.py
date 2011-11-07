@@ -12,9 +12,8 @@ class ERM(NEB):
         self.control = control
         NEB.__init__(self, images, k, climb, parallel)
 
-        self.minmodes = np.zeros((self.nimages, self.natoms, 3))
-        self.curvatures = np.zeros(self.nimages)
-
+        # Set up MinModeAtoms objects for each image and make individual logfiles for each
+        # NB: Shouldn't there be a ERM_Control class that takes care of this crap?
         self.min_images = []
         for i in range(self.nimages):
             min_control = control.copy()
@@ -42,7 +41,6 @@ class ERM(NEB):
             for i in range(self.nimages):
                 m = self.min_images[i]
                 m.initialize_eigenmodes()
-                self.minmodes[i] = m.get_eigenmode()
         else:
             if len(minmodes) == self.nimages and len(minmodes[0]) == self.natoms and len(minmodes[0][0]) == 3:
                 # Assume one minmode for each image
@@ -57,16 +55,19 @@ class ERM(NEB):
                 raise ValueError('ERM did not understand the minmodes given to it.')
 
         # Ensure orthogonality of the minmodes
-        for i_img in range(self.nimages):
-            t = self.tangents[i_img]
+        for i in range(self.nimages):
+            t = self.tangents[i]
             nt = normalize(t)
-            m = self.minmodes[i_img]
+            m = self.min_images[i].get_eigenmode()
             m -= np.vdot(m, nt) * nt
             m = normalize(m)
+            self.min_images[i].set_eigenmode(m)
+
+        # These should be user variables
+        self.decouple_modes = True # Release the orthogonality constraint of the minmode and tanget.
 
     def get_forces(self):
         """Evaluate and return the forces."""
-
 
         # Update the clean forces and energies
         self.calculate_energies_and_forces()
@@ -93,10 +94,25 @@ class ERM(NEB):
         return self.projected_forces[1:self.nimages-1].reshape((-1, 3))
 
     def calculate_eigenmodes(self):
+        if self.parallel:
+            raise NotImplementedError()
+        else:
+            for i in range(1, self.nimages - 1):
+                img = self.min_images[i]
+                m = img.get_eigenmode()
+                t = self.tangents
+                nt = normalize(t)
+                mt = normalize(m)
+                if self.decouple_modes:
+                    img.set_basis(None)
+                    img.find_eigenmodes()
+
+    def calculate_eigenmodes_OLD(self):
         if not self.parallel:
-            for k in range(1, self.nimages - 1):
-                m = self.first_modes[k]
-                t = self.tangents[k]
+            for i in range(1, self.nimages - 1):
+                m = self.minmodes[i]
+                img = self.min_images[i]
+                t = self.tangents[i]
                 m = normalize(perpendicular_vector(m, normalize(t)))
                 if self.decouple_modes:
                     search = DimerEigenmodeSearch(self.minmodes[k], control = self.control, eigenmode = m)
@@ -105,7 +121,6 @@ class ERM(NEB):
                 search.converge_to_eigenmode()
                 self.first_modes[k] = search.get_eigenmode()
                 self.first_curvatures[k] = search.get_curvature()
-#                self.second_modes_calculated[k] = False
         else:
             k = self.world.rank * (self.nimages - 2) // self.world.size + 1
             m = self.first_modes[k]
@@ -123,13 +138,10 @@ class ERM(NEB):
                     raise RuntimeError('Parallel Dimer failed!')
             self.first_modes[k] = search.get_eigenmode()
             self.first_curvatures[k] = search.get_curvature()
-#            self.second_modes_calculated[k] = False # NOT USED ANYMORE
             for k in range(1, self.nimages - 1):
                 root = (k - 1) * self.world.size // (self.nimages - 2)
                 self.world.broadcast(self.first_modes[k], root)
                 self.world.broadcast(self.first_curvatures[k:k], root)
-#                self.world.broadcast(self.second_modes_calculated[k], root)
-                
 
     def invert_eigenmode_forces(self):
         for k in range(1, self.nimages - 1):
