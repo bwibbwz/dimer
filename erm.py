@@ -40,9 +40,9 @@ class ERM(NEB):
         # Set up the initial minimum modes
         if minmodes is None:
             for i in range(self.nimages):
-                m = MinModeAtoms(self.images[i], control)
+                m = self.min_images[i]
                 m.initialize_eigenmodes()
-                self.minmodes[k] = m.get_eigenmode()
+                self.minmodes[i] = m.get_eigenmode()
         else:
             if len(minmodes) == self.nimages and len(minmodes[0]) == self.natoms and len(minmodes[0][0]) == 3:
                 # Assume one minmode for each image
