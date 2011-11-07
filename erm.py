@@ -22,7 +22,6 @@ class ERM(NEB):
             logfile_old = self.control.get_logfile().name.split('.')
             logfile_old.insert(-1, '%s' % (('%0' + str(len(str(self.nimages))) + 'i') % i))
             logfile_new = '-'.join(['.'.join(logfile_old[:-2]), '.'.join(logfile_old[-2:])])
-            print logfile_new
             min_control.initialize_logfiles(logfile = logfile_new)
             min_image = MinModeAtoms(self.images[i], min_control)
             self.min_images.append(min_image)
