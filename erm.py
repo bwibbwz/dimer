@@ -15,21 +15,33 @@ class ERM(NEB):
         self.minmodes = np.zeros((self.nimages, self.natoms, 3))
         self.curvatures = np.zeros(self.nimages)
 
+        self.min_images = []
+        for i in range(self.nimages):
+            min_control = control.copy()
+            i_num = ('%0' + str(len(str(self.nimages))) + 'i') % i
+            logfile_old = self.control.get_logfile().name.split('.')
+            logfile_old.insert(-1, '%s' % (('%0' + str(len(str(self.nimages))) + 'i') % i))
+            logfile_new = '-'.join(['.'.join(logfile_old[:-2]), '.'.join(logfile_old[-2:])])
+            print logfile_new
+            min_control.initialize_logfiles(logfile = logfile_new)
+            min_image = MinModeAtoms(self.images[i], min_control)
+            self.min_images.append(min_image)
+
         self.forces['dimer'] = np.zeros((self.nimages, self.natoms, 3))
 
         # Populate the tangents
-        for k in range(1, self.nimages - 1):
-            p_m = self.images[k - 1].get_positions()
-            p_p = self.images[k + 1].get_positions()
+        for i in range(1, self.nimages - 1):
+            p_m = self.images[i - 1].get_positions()
+            p_p = self.images[i + 1].get_positions()
             t = (p_p - p_m) / 2.0
-            self.tangents[k] = t
+            self.tangents[i] = t
         self.tangents[0] = t
         self.tangents[-1] = -t
 
         # Set up the initial minimum modes
         if minmodes is None:
-            for k in range(self.nimages):
-                m = MinModeAtoms(self.images[k], control)
+            for i in range(self.nimages):
+                m = MinModeAtoms(self.images[i], control)
                 m.initialize_eigenmodes()
                 self.minmodes[k] = m.get_eigenmode()
         else:
@@ -45,24 +57,17 @@ class ERM(NEB):
             else:
                 raise ValueError('ERM did not understand the minmodes given to it.')
 
-        # Ensure orthogonality
-        for k_img in range(self.nimages):
-            t = self.tangents[k_img]
+        # Ensure orthogonality of the minmodes
+        for i_img in range(self.nimages):
+            t = self.tangents[i_img]
             nt = normalize(t)
-            m = self.minmodes[k_img]
+            m = self.minmodes[i_img]
             m -= np.vdot(m, nt) * nt
             m = normalize(m)
 
-        # ATH DEV
-        self.animate = 0
-        self.enMat = None
-        self.xVec = None
-        self.yVec = None
-        self.dev_plot = False # Can be turned on manually
-        self.decouple_modes = False
-
     def get_forces(self):
         """Evaluate and return the forces."""
+
 
         # Update the clean forces and energies
         self.calculate_energies_and_forces()
@@ -70,6 +75,7 @@ class ERM(NEB):
         # Update the highest energy image
         self.imax = 1 + np.argsort(self.energies[1:-1])[-1]
         self.emax = self.energies[self.imax]
+        # BUG: self.imax can be an endimage.
 
         # Calculate the tangents of all the images
         self.update_tangents()
@@ -82,8 +88,8 @@ class ERM(NEB):
         # Prjoect the forces for each image
         self.invert_eigenmode_forces()
         self.project_forces()
-        if self.dev_plot:
-            self.plot_2d_pes()
+#        if self.dev_plot:
+#            self.plot_2d_pes()
         self.control.increment_counter('optcount')
         return self.projected_forces[1:self.nimages-1].reshape((-1, 3))
 
