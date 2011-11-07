@@ -313,8 +313,6 @@ class MinModeControl:
         # Initialize the counters
         self.counters = {'forcecalls': 0, 'rotcount': 0, 'optcount': 0}
 
-        self.log()
-
     def initialize_logfiles(self, logfile=None, eigenmode_logfile=None):
         """Set up the log files."""
         # Set up the regular logfile
@@ -384,6 +382,14 @@ class MinModeControl:
         """Reset all counters."""
         for key in self.counters.keys():
             self.counters[key] = 0
+
+    def copy(self):
+        control = self.__class__()
+        for key in self.parameters.keys():
+            value = self.parameters[key]
+            if value != control.get_parameter(key):
+                control.set_parameter(key, value)
+        return control
 
 class DimerControl(MinModeControl):
     """A class that takes care of the parameters needed for a Dimer search.
@@ -538,6 +544,9 @@ class MinModeAtoms:
                     self.control.set_parameter(key, kwargs[key])
             self.control.initialize_logfiles(logfile = logfile,
                                              eigenmode_logfile = mlogfile)
+
+        # Print the log header
+        self.control.log()
 
         # Seed the randomness
         if random_seed is None:
