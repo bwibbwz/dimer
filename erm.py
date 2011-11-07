@@ -14,16 +14,16 @@ class ERM(NEB):
 
         # Set up MinModeAtoms objects for each image and make individual logfiles for each
         # NB: Shouldn't there be a ERM_Control class that takes care of this crap?
-        self.min_images = []
+        self.images = []
         for i in range(self.nimages):
             min_control = control.copy()
             i_num = ('%0' + str(len(str(self.nimages))) + 'i') % i
             logfile_old = self.control.get_logfile().name.split('.')
-            logfile_old.insert(-1, '%s' % (('%0' + str(len(str(self.nimages))) + 'i') % i))
+            logfile_old.insert(-1, 'erm-%s' % (('%0' + str(len(str(self.nimages))) + 'i') % i))
             logfile_new = '-'.join(['.'.join(logfile_old[:-2]), '.'.join(logfile_old[-2:])])
             min_control.initialize_logfiles(logfile = logfile_new)
-            min_image = MinModeAtoms(self.images[i], min_control)
-            self.min_images.append(min_image)
+            image = MinModeAtoms(images[i], min_control)
+            self.images.append(image)
 
         self.forces['dimer'] = np.zeros((self.nimages, self.natoms, 3))
 
@@ -39,7 +39,7 @@ class ERM(NEB):
         # Set up the initial minimum modes
         if minmodes is None:
             for i in range(self.nimages):
-                m = self.min_images[i]
+                m = self.images[i]
                 m.initialize_eigenmodes()
         else:
             if len(minmodes) == self.nimages and len(minmodes[0]) == self.natoms and len(minmodes[0][0]) == 3:
@@ -58,13 +58,13 @@ class ERM(NEB):
         for i in range(self.nimages):
             t = self.tangents[i]
             nt = normalize(t)
-            m = self.min_images[i].get_eigenmode()
+            m = self.images[i].get_eigenmode()
             m -= np.vdot(m, nt) * nt
             m = normalize(m)
-            self.min_images[i].set_eigenmode(m)
+            self.images[i].set_eigenmode(m)
 
         # These should be user variables
-        self.decouple_modes = True # Release the orthogonality constraint of the minmode and tanget.
+        self.decouple_modes = False # Release the orthogonality constraint of the minmode and tanget.
 
     def get_forces(self):
         """Evaluate and return the forces."""
@@ -91,78 +91,61 @@ class ERM(NEB):
 #        if self.dev_plot:
 #            self.plot_2d_pes()
         self.control.increment_counter('optcount')
-        return self.projected_forces[1:self.nimages-1].reshape((-1, 3))
+        return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def calculate_eigenmodes(self):
         if self.parallel:
             raise NotImplementedError()
         else:
             for i in range(1, self.nimages - 1):
-                img = self.min_images[i]
+                img = self.images[i]
                 m = img.get_eigenmode()
                 t = self.tangents
                 nt = normalize(t)
-                mt = normalize(m)
+                nm = normalize(m)
+                # Does a modified mt need to be passed?
+                # Otherwise a bunch of these lines can be deleted.
                 if self.decouple_modes:
                     img.set_basis(None)
                     img.find_eigenmodes()
-
-    def calculate_eigenmodes_OLD(self):
-        if not self.parallel:
-            for i in range(1, self.nimages - 1):
-                m = self.minmodes[i]
-                img = self.min_images[i]
-                t = self.tangents[i]
-                m = normalize(perpendicular_vector(m, normalize(t)))
-                if self.decouple_modes:
-                    search = DimerEigenmodeSearch(self.minmodes[k], control = self.control, eigenmode = m)
+                    img.set_basis(nt)
                 else:
-                    search = DimerEigenmodeSearch(self.minmodes[k], control = self.control, eigenmode = m, basis = [normalize(t)])
-                search.converge_to_eigenmode()
-                self.first_modes[k] = search.get_eigenmode()
-                self.first_curvatures[k] = search.get_curvature()
-        else:
-            k = self.world.rank * (self.nimages - 2) // self.world.size + 1
-            m = self.first_modes[k]
-            t = self.tangents[k]
-            m = normalize(perpendicular_vector(m, normalize(t)))
-            search = DimerEigenmodeSearch(self.minmodes[k], control = self.control, eigenmode = m, basis = [normalize(t)])
-            try:
-                search.converge_to_eigenmode()
-            except:
-                error = self.world.sum(1.0)
-                raise
-            else:
-                error = self.world.sum(0.0)
-                if error:
-                    raise RuntimeError('Parallel Dimer failed!')
-            self.first_modes[k] = search.get_eigenmode()
-            self.first_curvatures[k] = search.get_curvature()
-            for k in range(1, self.nimages - 1):
-                root = (k - 1) * self.world.size // (self.nimages - 2)
-                self.world.broadcast(self.first_modes[k], root)
-                self.world.broadcast(self.first_curvatures[k:k], root)
+                    img.set_basis(nt)
+                    img.find_eigenmodes()
 
     def invert_eigenmode_forces(self):
-        for k in range(1, self.nimages - 1):
-            f_clean = self.clean_forces[k]
-            t = self.tangents[k]
-            m1 = self.first_modes[k]
-#            m2 = self.second_modes[k]
-            c1 = self.first_curvatures[k]
-#            c2 = self.second_curvatures[k]
-            if not self.climb or k == self.imax or True:
-                self.dimer_forces[k] = f_clean - 2 * parallel_vector(f_clean, m1)
-            # ATH: Maybe invert both while trying to escape the bad regions
-#            if self.second_modes_calculated[k]:
-#                self.dimer_forces[k] = self.dimer_forces[k] - 2 * parallel_vector(self.dimer_forces[k], m2)
-#                print 'image %i, forces inverted' % k
-                self.clean_forces[k] = self.dimer_forces[k]
+        for i in range(1, self.nimages - 1):
+            f_r = self.forces['real'][i]
+            t = self.tangents[i]
+            nt = normalize(t)
+            nm = self.images[i].get_eigenmode()
+            self.forces['dimer'][i] = f_r - 2 * np.vdot(f_r, nm) * nm
+
+    def project_forces(self):
+        ts = self.tangents
+        for i in range(1, self.nimages - 1):
+            t = ts[i] / np.vdot(ts[i], ts[i])**0.5
+            f_r = self.forces['dimer'][i].copy()
+            f_r_para = np.vdot(f_r, t) * t
+            f_r_perp = f_r - f_r_para
+            if self.climb and i == self.imax:
+                self.forces['neb'][i] = f_r - 2 * f_r_para
+            else:
+                p_m = self.images[i - 1].get_positions()
+                p = self.images[i].get_positions()
+                p_p = self.images[i + 1].get_positions()
+                nt_m = np.vdot(p - p_m, p - p_m)**0.5
+                nt_p = np.vdot(p_p - p, p_p - p)**0.5
+                f_s = (nt_p - nt_m) * self.k * t # NB: Need to implement variable k
+                self.forces['neb'][i] = f_r_perp + f_s
 
 # ----------------------------------------------------------------
 # --------------- Outdated and development methods ---------------
 # ----------------------------------------------------------------
     def plot_2d_pes(self):
+        pass
+
+    def plot_2d_pes_OLD(self):
         t  = self.tangents[1:self.nimages - 1]
         m1 = self.first_modes[1:self.nimages - 1]
 #        m2 = self.second_modes[1:self.nimages - 1]
