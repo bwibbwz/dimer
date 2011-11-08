@@ -92,14 +92,17 @@ class NEB:
             self.tangents[i] = t
             t_m = t_p
 
+    def calculate_image_energies_and_forces(self, i):
+        self.energies[i] = self.images[i].get_potential_energy()
+        self.forces['real'][i] = self.images[i].get_forces()
+
     def calculate_energies_and_forces(self):
         images = self.images
 
         if not self.parallel:
             # Do all images - one at a time:
             for i in range(1, self.nimages - 1):
-                self.energies[i] = images[i].get_potential_energy()
-                self.forces['real'][i] = images[i].get_forces()
+                self.calculate_image_energies_and_forces(i)
         else:
             # Parallelize over images:
             i = rank * (self.nimages - 2) // size + 1
