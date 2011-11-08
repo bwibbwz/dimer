@@ -39,6 +39,9 @@ class NEB:
         self.energies = np.zeros(self.nimages)
         self.tangents = np.zeros((self.nimages, self.natoms, 3))
 
+        # This option should be available to the users
+        self.spring_force = 'norm'
+
     def interpolate(self, initial=0, final=-1):
         """Interpolate linearly between initial and final images."""
         if final < 0:
@@ -140,7 +143,7 @@ class NEB:
 
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
-    def get_spring_force(self, i):
+    def get_norm_image_spring_force(self, i):
         t = self.tangents[i]
         nt = t / np.vdot(t, t)**0.5
         p_m = self.images[i - 1].get_positions()
@@ -149,6 +152,22 @@ class NEB:
         nt_m = np.vdot(p - p_m, p - p_m)**0.5
         nt_p = np.vdot(p_p - p, p_p - p)**0.5
         return (nt_p - nt_m) * self.k * t
+
+    def get_image_full_spring_force(self, i):
+        p_m = self.images[i - 1].get_positions()
+        p = self.images[i].get_positions()
+        p_p = self.images[i + 1].get_positions()
+        t_m = p - p_m
+        t_p = p_p - p
+        return (t_p - t_m) * self.k
+
+    def get_images_spring_force(self, i):
+        if self.spring_force == 'norm':
+            return self.get_norm_image_spring_force(i)
+        elif self.spring_force == 'full':
+            return self.get_full_image_spring_force(i)
+        else:
+            raise NotImplementedError('Only "norm" and "full" are allowed.')
 
     def project_forces(self):
         for i in range(1, self.nimages - 1):
@@ -160,7 +179,7 @@ class NEB:
             if self.climb and i == self.imax:
                 self.forces['neb'][i] = f_r - 2 * f_r_para
             else:
-                f_s = self.get_spring_force(i)
+                f_s = self.get_image_spring_force(i)
                 self.forces['neb'][i] = f_r_perp + f_s
 
     def get_potential_energy(self):
