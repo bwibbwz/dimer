@@ -74,6 +74,10 @@ class ERM(NEB):
         self.plot_y = None
         self.plot_e = None
 
+    def calculate_image_energies_and_forces(self, i):
+        self.energies[i] = self.images[i].get_potential_energy()
+        self.forces['real'][i] = self.images[i].get_forces(real = True)
+
     def get_forces(self):
         """Evaluate and return the forces."""
 
