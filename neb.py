@@ -137,22 +137,27 @@ class NEB:
 
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
+    def get_spring_force(self, i):
+        t = self.tangents[i]
+        nt = t / np.vdot(t, t)**0.5
+        p_m = self.images[i - 1].get_positions()
+        p = self.images[i].get_positions()
+        p_p = self.images[i + 1].get_positions()
+        nt_m = np.vdot(p - p_m, p - p_m)**0.5
+        nt_p = np.vdot(p_p - p, p_p - p)**0.5
+        return (nt_p - nt_m) * self.k * t
+
     def project_forces(self):
-        ts = self.tangents
         for i in range(1, self.nimages - 1):
-            t = ts[i] / np.vdot(ts[i], ts[i])**0.5
-            f_r = self.forces['real'][i].copy()
-            f_r_para = np.vdot(f_r, t) * t
+            t = self.tangents[i]
+            nt = t / np.vdot(t, t)**0.5
+            f_r = self.forces['real'][i]
+            f_r_para = np.vdot(f_r, nt) * nt
             f_r_perp = f_r - f_r_para
             if self.climb and i == self.imax:
                 self.forces['neb'][i] = f_r - 2 * f_r_para
             else:
-                p_m = self.images[i - 1].get_positions()
-                p = self.images[i].get_positions()
-                p_p = self.images[i + 1].get_positions()
-                nt_m = np.vdot(p - p_m, p - p_m)**0.5
-                nt_p = np.vdot(p_p - p, p_p - p)**0.5
-                f_s = (nt_p - nt_m) * self.k * t # NB: Need to implement variable k
+                f_s = self.get_spring_force(i)
                 self.forces['neb'][i] = f_r_perp + f_s
 
     def get_potential_energy(self):
