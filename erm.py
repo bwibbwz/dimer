@@ -12,6 +12,8 @@ class ERM(NEB):
         self.control = control
         NEB.__init__(self, images, k, climb, parallel)
 
+        self.spring_force = 'full'
+
         # Set up MinModeAtoms objects for each image and make individual logfiles for each
         # NB: Shouldn't there be a ERM_Control class that takes care of this crap?
         self.images = []
@@ -132,24 +134,6 @@ class ERM(NEB):
             nt = normalize(t)
             nm = self.images[i].get_eigenmode()
             self.forces['dimer'][i] = f_r - 2 * np.vdot(f_r, nm) * nm
-
-    def project_forces(self):
-        ts = self.tangents
-        for i in range(1, self.nimages - 1):
-            t = ts[i] / np.vdot(ts[i], ts[i])**0.5
-            f_r = self.forces['dimer'][i].copy()
-            f_r_para = np.vdot(f_r, t) * t
-            f_r_perp = f_r - f_r_para
-            if self.climb and i == self.imax:
-                self.forces['neb'][i] = f_r - 2 * f_r_para
-            else:
-                p_m = self.images[i - 1].get_positions()
-                p = self.images[i].get_positions()
-                p_p = self.images[i + 1].get_positions()
-                nt_m = np.vdot(p - p_m, p - p_m)**0.5
-                nt_p = np.vdot(p_p - p, p_p - p)**0.5
-                f_s = (nt_p - nt_m) * self.k * t # NB: Need to implement variable k
-                self.forces['neb'][i] = f_r_perp + f_s
 
 # ----------------------------------------------------------------
 # --------------- Outdated and development methods ---------------
