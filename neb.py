@@ -153,7 +153,7 @@ class NEB:
         nt_p = np.vdot(p_p - p, p_p - p)**0.5
         return (nt_p - nt_m) * self.k * t
 
-    def get_image_full_spring_force(self, i):
+    def get_full_image_spring_force(self, i):
         p_m = self.images[i - 1].get_positions()
         p = self.images[i].get_positions()
         p_p = self.images[i + 1].get_positions()
