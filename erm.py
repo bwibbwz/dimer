@@ -128,7 +128,6 @@ class ERM(NEB):
             nt = normalize(t)
             nm = self.images[i].get_eigenmode()
             self.forces['dimer'][i] = f_r - 2 * np.vdot(f_r, nm) * nm
-            self.forces['dimer'][i] = f_r
 
     def project_forces(self):
         ts = self.tangents
