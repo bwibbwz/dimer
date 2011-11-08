@@ -161,7 +161,7 @@ class NEB:
         t_p = p_p - p
         return (t_p - t_m) * self.k
 
-    def get_images_spring_force(self, i):
+    def get_image_spring_force(self, i):
         if self.spring_force == 'norm':
             return self.get_norm_image_spring_force(i)
         elif self.spring_force == 'full':
