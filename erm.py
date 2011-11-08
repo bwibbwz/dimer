@@ -108,7 +108,7 @@ class ERM(NEB):
             for i in range(1, self.nimages - 1):
                 img = self.images[i]
                 m = img.get_eigenmode()
-                t = self.tangents
+                t = self.tangents[i]
                 nt = normalize(t)
                 nm = normalize(m)
                 # Does a modified mt need to be passed?
@@ -128,6 +128,7 @@ class ERM(NEB):
             nt = normalize(t)
             nm = self.images[i].get_eigenmode()
             self.forces['dimer'][i] = f_r - 2 * np.vdot(f_r, nm) * nm
+            self.forces['dimer'][i] = f_r
 
     def project_forces(self):
         ts = self.tangents
@@ -213,6 +214,7 @@ class ERM(NEB):
             p = pos[-1]
             d1 = dim[0]
             d2 = dim[1]
+            ax.plot((p[d1]), (p[d2]), 'k.', markersize = r + 1)
             ax.plot((p[d1]), (p[d2]), '%s.' % c, markersize = r)
 
         n = self.nimages
@@ -241,11 +243,11 @@ class ERM(NEB):
                     make_circle(p, 35.0, 'c', ax = ax1)
                 else:
                     make_circle(p, 35.0, 'y', ax = ax1)
-                make_line(p, t, 'b', ax = ax1)
-                make_line(p, m, 'r', ax = ax1)
                 make_arrow(p, f_r, 'w', ax = ax1)
                 make_arrow(p, f_d, 'b', ax = ax1)
                 make_arrow(p, f_n, 'k', ax = ax1)
+                make_line(p, t, 'r', ax = ax1)
+                make_line(p, m, 'b', ax = ax1)
 
         if self.plot_e is not None:
             ax1.contourf(self.plot_x, self.plot_y, self.plot_e, 30)
