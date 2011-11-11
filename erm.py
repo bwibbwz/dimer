@@ -44,13 +44,13 @@ class ERM(NEB):
                 m = self.images[i]
                 m.initialize_eigenmodes()
         else:
-            if len(minmodes) == self.nimages and len(minmodes[0]) == self.natoms and len(minmodes[0][0]) == 3:
+            if minmodes.shape == (self.nimages, self.natoms, 3):
                 # Assume one minmode for each image
                 raise NotImplementedError()
-            elif len(minmodes) == 2 and len(minmodes[0]) == self.natoms and len(minmodes[0][0]) == 3:
+            elif minmodes.shape == (2, self.natoms, 3):
                 # Assume end images minmodes and interpolate
                 raise NotImplementedError()
-            elif len(minmodes) == self.natoms and len(minmodes[0]) == 3:
+            elif minmodes.shape == (self.natoms, 3)
                 # Assume the same minmode for all images
                 raise NotImplementedError()
             else:
