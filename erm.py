@@ -51,7 +51,7 @@ class ERM(NEB):
             elif minmodes.shape == (2, self.natoms, 3):
                 # Assume end images minmodes and interpolate
                 raise NotImplementedError()
-            elif minmodes.shape == (self.natoms, 3)
+            elif minmodes.shape == (self.natoms, 3):
                 # Assume the same minmode for all images
                 raise NotImplementedError()
             else:
@@ -108,7 +108,7 @@ class ERM(NEB):
         if self.plot_devplot:
             self.plot_pseudo_3d_pes()
         self.control.increment_counter('optcount')
-        print self.images[1]._calc.get_count()
+#        print self.images[1]._calc.get_count()
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def calculate_eigenmodes(self):
@@ -126,9 +126,9 @@ class ERM(NEB):
                 if self.decouple_modes:
                     img.set_basis(None)
                     img.find_eigenmodes()
-                    img.set_basis(nt)
                 else:
                     img.set_basis(nt)
+                    img.set_eigenmode(normalize(perpendicular_vector(nm, nt)))
                     img.find_eigenmodes()
 
     def invert_eigenmode_forces(self):
@@ -271,8 +271,11 @@ class ERM(NEB):
             if self.plot_e is not None:
                 axis2.set_xlim(xmin = min(self.plot_x), xmax = max(self.plot_x))
             else:
-                axis2.set_xlim(xmin = 0.0, xmax = 5.0)
-            axis2.set_ylim(ymin = -3.0e-9, ymax = 3.0e-9)
+                if self.xrange is not None:
+                    axis2.set_xlim(xmin = self.xrange[0], xmax = self.xrange[1])
+                else:
+                    axis2.set_xlim(xmin = 0.0, xmax = 5.0)
+#            axis2.set_ylim(ymin = -3.0e-9, ymax = 3.0e-9)
 
         plt.savefig('_fig-' + animate + '.png')
 #        plt.savefig('_fig-' + animate + '.svg')

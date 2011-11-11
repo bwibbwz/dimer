@@ -687,10 +687,17 @@ class MinModeAtoms:
         for k in range(order):
             if k > 0:
                 self.ensure_eigenmode_orthogonality(k + 1)
-            basis = self.eigenmodes[:k]
+                basis = self.eigenmodes[:k]
+            else:
+                basis = []
             if self.basis is not None:
-                for base in self.basis:
-                    basis.append(base)
+                if self.basis.shape == self.eigenmodes[0].shape:
+                    basis.append(self.basis)
+                elif self.basis.shape[1:] == self.eigenmodes[0].shape:
+                    for base in self.basis:
+                        basis.append(base)
+                else:
+                    raise ValueError('The basis definition was not understood.')
             search = DimerEigenmodeSearch(self, self.control, \
                 eigenmode = self.eigenmodes[k], basis = basis)
             search.converge_to_eigenmode()

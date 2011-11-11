@@ -141,7 +141,7 @@ class NEB:
         # Prjoect the forces for each image
         self.project_forces()
 
-        print self.images[1]._calc.get_count()
+#        print self.images[1]._calc.get_count()
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def get_norm_image_spring_force(self, i):
