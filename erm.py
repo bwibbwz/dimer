@@ -300,7 +300,7 @@ class ERM(NEB):
             axis3 = ax3.get_axes()
             if self.plot_e is not None:
                 axis2.set_xlim(xmin = min(self.plot_x), xmax = max(self.plot_x))
-                axis3.set_ylim(ymin = min(self.plot_y), xmax = max(self.plot_y))
+                axis3.set_ylim(ymin = min(self.plot_y), ymax = max(self.plot_y))
             else:
                 if self.xrange is not None:
                     axis2.set_xlim(xmin = self.xrange[0], xmax = self.xrange[1])
