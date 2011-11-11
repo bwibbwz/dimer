@@ -44,6 +44,7 @@ class ERM(NEB):
                 m = self.images[i]
                 m.initialize_eigenmodes()
         else:
+            minmodes = np.array(minmodes)
             if minmodes.shape == (self.nimages, self.natoms, 3):
                 # Assume one minmode for each image
                 raise NotImplementedError()
