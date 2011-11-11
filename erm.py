@@ -118,16 +118,12 @@ class ERM(NEB):
         else:
             for i in range(1, self.nimages - 1):
                 img = self.images[i]
-                m = img.get_eigenmode()
-                t = self.tangents[i]
-                nt = normalize(t)
-                nm = normalize(m)
-                # Does a modified mt need to be passed?
-                # Otherwise a bunch of these lines can be deleted.
                 if self.decouple_modes:
                     img.set_basis(None)
                     img.find_eigenmodes()
                 else:
+                    nm = normalize(img.get_eigenmode())
+                    nt = normalize(self.tangents[i])
                     img.set_basis(nt)
                     img.set_eigenmode(normalize(perpendicular_vector(nm, nt)))
                     img.find_eigenmodes()
