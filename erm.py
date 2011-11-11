@@ -75,6 +75,8 @@ class ERM(NEB):
         self.plot_x = None
         self.plot_y = None
         self.plot_e = None
+        self.xrange = None
+        self.yrange = None
 
     def calculate_image_energies_and_forces(self, i):
         self.energies[i] = self.images[i].get_potential_energy()
@@ -101,10 +103,11 @@ class ERM(NEB):
 
         # Prjoect the forces for each image
         self.invert_eigenmode_forces()
-        self.project_forces()
+        self.project_forces(sort = 'dimer')
         if self.plot_devplot:
             self.plot_pseudo_3d_pes()
         self.control.increment_counter('optcount')
+        print self.images[1]._calc.get_count()
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def calculate_eigenmodes(self):
@@ -253,8 +256,14 @@ class ERM(NEB):
             axis1.set_xlim(xmin = min(self.plot_x), xmax = max(self.plot_x))
             axis1.set_ylim(ymin = min(self.plot_y), ymax = max(self.plot_y))
         else:
-            axis1.set_xlim(xmin = 0.0, xmax = 5.0)
-            axis1.set_ylim(ymin = 0.0, ymax = 5.0)
+            if self.xrange is not None:
+                axis1.set_xlim(xmin = self.xrange[0], xmax = self.xrange[1])
+            else:
+                axis1.set_xlim(xmin = 0.0, xmax = 5.0)
+            if self.yrange is not None:
+                axis1.set_ylim(ymin = self.yrange[0], ymax = self.yrange[1])
+            else:
+                axis1.set_ylim(ymin = 0.0, ymax = 5.0)
 
         if self.plot_subplot:
             axis2 = ax2.get_axes()

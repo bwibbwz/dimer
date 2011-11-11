@@ -141,6 +141,7 @@ class NEB:
         # Prjoect the forces for each image
         self.project_forces()
 
+        print self.images[1]._calc.get_count()
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def get_norm_image_spring_force(self, i):
@@ -169,11 +170,11 @@ class NEB:
         else:
             raise NotImplementedError('Only "norm" and "full" are allowed.')
 
-    def project_forces(self):
+    def project_forces(self, sort='real'):
         for i in range(1, self.nimages - 1):
             t = self.tangents[i]
             nt = t / np.vdot(t, t)**0.5
-            f_r = self.forces['real'][i]
+            f_r = self.forces[sort][i]
             f_r_para = np.vdot(f_r, nt) * nt
             f_r_perp = f_r - f_r_para
             if self.climb and i == self.imax:
