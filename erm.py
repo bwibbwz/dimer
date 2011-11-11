@@ -148,14 +148,16 @@ class ERM(NEB):
         fig = plt.figure(figsize = (8,8))
         if self.plot_subplot:
             plt.axes()
-            ax1 = subplot2grid((4, 1), (0, 0), rowspan = 3)
-            ax2 = subplot2grid((4, 1), (3, 0), axisbg = 'y')
+            ax1 = subplot2grid((4, 4), (0, 0), rowspan = 3, colspan = 3)
+            ax2 = subplot2grid((4, 4), (3, 0), colspan = 3)
+            ax3 = subplot2grid((4, 4), (0, 3), rowspan = 3)
             ax2_base_scale = 0.00000002
 
         else:
             plt.axes()
             ax1 = subplot(111)
             ax2 = None
+            ax3 = None
 
         def make_line(pos, orient, c, size=0.2, width=1, dim=[0, 1], ax=plt):
             p = pos[-1]
@@ -240,6 +242,33 @@ class ERM(NEB):
                 make_line(p, t, 'r', ax = ax1)
                 make_line(p, m, 'b', ax = ax1)
 
+            if self.plot_subplot:
+                if i in [0, n - 1]:
+                    make_circle(p, 20.0, 'y', dim = [0, 2], ax = ax2)
+                else:
+                    if self.climb and i == self.imax:
+                        make_circle(p, 35.0, 'c', dim = [0, 2], ax = ax2)
+                    else:
+                        make_circle(p, 35.0, 'y', dim = [0, 2], ax = ax2)
+                    make_arrow(p, f_r, 'w', dim = [0, 2], ax = ax2)
+                    make_arrow(p, f_d, 'b', dim = [0, 2], ax = ax2)
+                    make_arrow(p, f_n, 'k', dim = [0, 2], ax = ax2)
+                    make_line(p, t, 'r', dim = [0, 2], ax = ax2)
+                    make_line(p, m, 'b', dim = [0, 2], ax = ax2)
+
+                if i in [0, n - 1]:
+                    make_circle(p, 20.0, 'y', dim = [2, 1], ax = ax3)
+                else:
+                    if self.climb and i == self.imax:
+                        make_circle(p, 35.0, 'c', dim = [2, 1], ax = ax3)
+                    else:
+                        make_circle(p, 35.0, 'y', dim = [2, 1], ax = ax3)
+                    make_arrow(p, f_r, 'w', dim = [2, 1], ax = ax3)
+                    make_arrow(p, f_d, 'b', dim = [2, 1], ax = ax3)
+                    make_arrow(p, f_n, 'k', dim = [2, 1], ax = ax3)
+                    make_line(p, t, 'r', dim = [2, 1], ax = ax3)
+                    make_line(p, m, 'b', dim = [2, 1], ax = ax3)
+
         if self.plot_e is not None:
             ax1.contourf(self.plot_x, self.plot_y, self.plot_e, 30)
 
@@ -268,13 +297,17 @@ class ERM(NEB):
 
         if self.plot_subplot:
             axis2 = ax2.get_axes()
+            axis3 = ax3.get_axes()
             if self.plot_e is not None:
                 axis2.set_xlim(xmin = min(self.plot_x), xmax = max(self.plot_x))
+                axis3.set_ylim(ymin = min(self.plot_y), xmax = max(self.plot_y))
             else:
                 if self.xrange is not None:
                     axis2.set_xlim(xmin = self.xrange[0], xmax = self.xrange[1])
+                    axis3.set_ylim(ymin = self.yrange[0], ymax = self.yrange[1])
                 else:
                     axis2.set_xlim(xmin = 0.0, xmax = 5.0)
+                    axis3.set_ylim(ymin = 0.0, ymax = 5.0)
 #            axis2.set_ylim(ymin = -3.0e-9, ymax = 3.0e-9)
 
         plt.savefig('_fig-' + animate + '.png')
