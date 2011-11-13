@@ -38,6 +38,11 @@ class ERM(NEB):
             p_m = self.images[i - 1].get_positions()
             p_p = self.images[i + 1].get_positions()
             t = (p_p - p_m) / 2.0
+            if 0.0 in t:
+                # Assume a linear interpolation
+                # HACK/BUG: Currently the last or first "free" image will yield p[-1] - p[0]
+                t = self.images[-1].get_positions() - self.images[0].get_positions()
+                t /= (self.nimages - 1.0)
             self.tangents[i] = t
         self.tangents[0] = t
         self.tangents[-1] = -t
