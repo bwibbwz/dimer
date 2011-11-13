@@ -79,7 +79,7 @@ class ERM(NEB):
         self.decouple_modes = False # Release the orthogonality constraint of the minmode and tanget.
 
         # Development stuff
-        self.plot_devplot = True
+        self.plot_devplot = False
         self.plot_subplot = False
         self.plot_animate = 0
         self.plot_x = None
