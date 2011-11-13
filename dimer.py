@@ -654,6 +654,9 @@ class MinModeAtoms:
 
     def get_forces(self, real=False, pos=None, **kwargs):
         """Return the forces, projected or real."""
+        if 'apply_constraint' in kwargs:
+            # Most likely a call from write() in ase.io.trajectory
+            return self.get_projected_forces()
         if self.calculation_required() and pos is None:
             self.calculate_real_forces_and_energies(**kwargs)
         if real and pos is None:
