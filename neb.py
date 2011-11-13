@@ -144,7 +144,7 @@ class NEB:
         # Prjoect the forces for each image
         self.project_forces()
 
-#        print self.images[1]._calc.get_count()
+        print self.images[1]._calc.get_count()
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def get_norm_image_spring_force(self, i):
@@ -326,7 +326,6 @@ def fit0(E, F, R):
     s = [0]
     for i in range(n - 1):
         s.append(s[-1] + sqrt(((R[i + 1] - R[i])**2).sum()))
-#	print s[i], s[i] - s[i-1]
 
     lines = []
     for i in range(n):

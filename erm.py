@@ -109,7 +109,7 @@ class ERM(NEB):
         if self.plot_devplot:
             self.plot_pseudo_3d_pes()
         self.control.increment_counter('optcount')
-#        print self.images[1]._calc.get_count()
+        print self.images[1]._calc.get_count()
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def calculate_eigenmodes(self):
