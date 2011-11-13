@@ -79,6 +79,7 @@ class ERM(NEB):
         self.plot_e = None
         self.xrange = None
         self.yrange = None
+        self.last_count = 0
 
     def calculate_image_energies_and_forces(self, i):
         self.energies[i] = self.images[i].get_potential_energy()
@@ -109,7 +110,9 @@ class ERM(NEB):
         if self.plot_devplot:
             self.plot_pseudo_3d_pes()
         self.control.increment_counter('optcount')
-        print self.images[1]._calc.get_count()
+        current_count = self.images[1]._calc.get_count()
+        print '%i (%i)' % (current_count - self.last_count, current_count)
+        self.last_count = current_count
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def calculate_eigenmodes(self):
