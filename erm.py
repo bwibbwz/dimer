@@ -111,21 +111,37 @@ class ERM(NEB):
         self.control.increment_counter('optcount')
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
+    def calculate_image_eigenmode(self, i):
+        img = self.images[i]
+        if self.decouple_modes:
+            img.set_basis(None)
+        else:
+            nm = normalize(img.get_eigenmode())
+            nt = normalize(self.tangents[i])
+            img.set_basis(nt)
+            img.set_eigenmode(normalize(perpendicular_vector(nm, nt)))
+        img.find_eigenmodes()
+
     def calculate_eigenmodes(self):
         if self.parallel:
-            raise NotImplementedError()
+            i = rank * (self.nimages - 2) // size + 1
+            try:
+                self.calculate_image_eigenmode(i)
+            except:
+                # Make sure other images also fail:
+                error = world.sum(1.0)
+                raise
+            else:
+                error = world.sum(0.0)
+                if error:
+                    raise RuntimeError('Parallel ERM failed during eigenmode calculations.')
+#            for i in range(1, self.nimages - 1):
+#                root = (i - 1) * size // (self.nimages - 2)
+#                world.broadcast(self.energies[i:i], root) # ATH
+#                world.broadcast(self.forces['real'][i], root)
         else:
             for i in range(1, self.nimages - 1):
-                img = self.images[i]
-                if self.decouple_modes:
-                    img.set_basis(None)
-                    img.find_eigenmodes()
-                else:
-                    nm = normalize(img.get_eigenmode())
-                    nt = normalize(self.tangents[i])
-                    img.set_basis(nt)
-                    img.set_eigenmode(normalize(perpendicular_vector(nm, nt)))
-                    img.find_eigenmodes()
+                self.calculate_image_eigenmode(i)
 
     def invert_eigenmode_forces(self):
         for i in range(1, self.nimages - 1):
