@@ -113,8 +113,7 @@ class NEB:
             # Parallelize over images:
             i = rank * (self.nimages - 2) // size + 1
             try:
-                self.energies[i] = images[i].get_potential_energy()
-                self.forces['real'][i] = images[i].get_forces()
+                self.calculate_image_energies_and_forces(i)
             except:
                 # Make sure other images also fail:
                 error = world.sum(1.0)
