@@ -19,12 +19,15 @@ class ERM(NEB):
         self.images = []
         for i in range(self.nimages):
             min_control = control.copy()
-            i_num = ('%0' + str(len(str(self.nimages))) + 'i') % i
-            logfile_old = self.control.get_logfile().name.split('.')
-            logfile_old.insert(-1, 'erm-%s' % (('%0' + str(len(str(self.nimages))) + 'i') % i))
-            logfile_new = '-'.join(['.'.join(logfile_old[:-2]), '.'.join(logfile_old[-2:])])
-            # BUG: What about the modelog?
-            min_control.initialize_logfiles(logfile = logfile_new)
+            if rank != 0:
+                logfile_new = None
+            else:
+                i_num = ('%0' + str(len(str(self.nimages))) + 'i') % i
+                logfile_old = self.control.get_logfile().name.split('.')
+                logfile_old.insert(-1, 'erm-%s' % (('%0' + str(len(str(self.nimages))) + 'i') % i))
+                logfile_new = '-'.join(['.'.join(logfile_old[:-2]), '.'.join(logfile_old[-2:])])
+                # BUG: What about the modelog?
+                min_control.initialize_logfiles(logfile = logfile_new)
             image = MinModeAtoms(images[i], min_control)
             self.images.append(image)
 
