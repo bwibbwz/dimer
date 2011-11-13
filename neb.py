@@ -14,27 +14,36 @@ from ase.io import read
 from ase.dimer import normalize, norm
 
 class NEB:
-    def __init__(self, images, k=0.1, climb=False, parallel=False):
+    def __init__(self, images, k=1.0, climb=False, parallel=False):
         self.images = images
+
+        # NB: Need support for variable spring constants
         self.k = k
         self.climb = climb
         self.parallel = parallel
         self.natoms = len(images[0])
+
+        # Make sure all the images are of even length.
+        # NB: This test should be more elaborate and include species and possible strangeness in the path.
+        assert [len(images[0]) for _ in images] == [len(img) for img in images] 
+
         self.nimages = len(images)
         self.emax = np.nan
         self.imax = None
 
         # Set up empty arrays to store forces, energies and tangents
-        self.clean_forces = np.zeros((self.nimages, self.natoms, 3))
-        self.projected_forces = np.zeros((self.nimages, self.natoms, 3))
+        self.forces = {}
+        self.forces['real'] = np.zeros((self.nimages, self.natoms, 3))
+        self.forces['neb'] = np.zeros((self.nimages, self.natoms, 3))
+        self.forces['spring'] = np.zeros((self.nimages, self.natoms, 3))
         self.energies = np.zeros(self.nimages)
         self.tangents = np.zeros((self.nimages, self.natoms, 3))
 
-        self.world = world
+        # This option should be available to the users
+        self.spring_force = 'norm'
 
-        self.dneb = True
-        self.perp = False
-        self.second_NEB = False
+        # ERM dev
+        self.forces['spring'] = np.zeros((self.nimages, self.natoms, 3))
 
     def interpolate(self, initial=0, final=-1):
         """Interpolate linearly between initial and final images."""
@@ -63,39 +72,35 @@ class NEB:
             image.set_positions(positions[n1:n2])
             n1 = n2
 
-    def update_tangents_OLD(self):
+    def update_tangents(self):
         images = self.images
-        tangent_m = images[1].get_positions() - images[0].get_positions()
+        t_m = images[1].get_positions() - images[0].get_positions()
         for i in range(1, self.nimages - 1):
-            tangent_p = (images[i + 1].get_positions() - \
-                         images[i].get_positions())
-            if i < self.imax:
-                tangent = tangent_p
-            elif i > self.imax:
-                tangent = tangent_m
+            t_p = (images[i + 1].get_positions() - images[i].get_positions())
+            e = self.energies[i]
+            e_m = self.energies[i - 1]
+            e_p = self.energies[i + 1]
+            # NB: Check the below definition, it might have been flipped to use the lower energy tangent.
+            if e < e_m and e > e_p:
+                t = t_m
+            elif e > e_m and e < e_p:
+                t = t_p
             else:
                 # BUG: Possible error when end images become highest.
-                ei = self.energies[i]
-                eim = self.energies[i - 1]
-                eip = self.energies[i + 1]
-                eimax = max(abs(eip - ei), abs(eim - ei))
-                eimin = min(abs(eip - ei), abs(eim - ei))
-                if eip > eim:
-                    tangent = tangent_p * eimax + tangent_m * eimin
+                e_max = max(abs(e_p - e), abs(e_m - e))
+                e_min = min(abs(e_p - e), abs(e_m - e))
+                if e_p > e_m:
+                    t = t_p * e_max + t_m * e_min
                 else:
-                    tangent = tangent_p * eimin + tangent_m * eimax
-                tangent /= np.vdot(tangent, tangent)**0.5
-                tangent *= (np.vdot(tangent_m, tangent_m)**0.5 + \
-                            np.vdot(tangent_p, tangent_p)**0.5) / 2.0
-            self.tangents[i] = tangent
-            tangent_m = tangent_p
+                    t = t_p * e_min + t_m * e_max
+                t /= np.vdot(t, t)**0.5
+                t *= (np.vdot(t_m, t_m)**0.5 + np.vdot(t_p, t_p)**0.5) / 2.0
+            self.tangents[i] = t
+            t_m = t_p
 
-    def update_tangents_NEW(self):
-        pass
-
-    def update_tangents(self):
-        self.update_tangents_OLD()
-
+    def calculate_image_energies_and_forces(self, i):
+        self.energies[i] = self.images[i].get_potential_energy()
+        self.forces['real'][i] = self.images[i].get_forces()
 
     def calculate_energies_and_forces(self):
         images = self.images
@@ -103,14 +108,13 @@ class NEB:
         if not self.parallel:
             # Do all images - one at a time:
             for i in range(1, self.nimages - 1):
-                self.energies[i] = images[i].get_potential_energy()
-                self.clean_forces[i] = images[i].get_forces()
+                self.calculate_image_energies_and_forces(i)
         else:
             # Parallelize over images:
             i = rank * (self.nimages - 2) // size + 1
             try:
                 self.energies[i] = images[i].get_potential_energy()
-                self.clean_forces[i] = images[i].get_forces()
+                self.forces['real'][i] = images[i].get_forces()
             except:
                 # Make sure other images also fail:
                 error = world.sum(1.0)
@@ -118,16 +122,16 @@ class NEB:
             else:
                 error = world.sum(0.0)
                 if error:
-                    raise RuntimeError('Parallel NEB failed!')
+                    raise RuntimeError('Parallel NEB failed')
             for i in range(1, self.nimages - 1):
                 root = (i - 1) * size // (self.nimages - 2)
                 world.broadcast(self.energies[i:i], root) # ATH
-                world.broadcast(self.clean_forces[i], root)
+                world.broadcast(self.forces['real'][i], root)
 
     def get_forces(self):
         """Evaluate and return the forces."""
 
-        # Update the clean forces and energies
+        # Update the real forces and energies
         self.calculate_energies_and_forces()
 
         # Update the highest energy image
@@ -140,77 +144,48 @@ class NEB:
         # Prjoect the forces for each image
         self.project_forces()
 
-        return self.projected_forces[1:self.nimages-1].reshape((-1, 3))
+#        print self.images[1]._calc.get_count()
+        return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
-    def project_forces(self):
-        k = self.k
+    def get_norm_image_spring_force(self, i):
+        t = self.tangents[i]
+        nt = t / np.vdot(t, t)**0.5
+        p_m = self.images[i - 1].get_positions()
+        p = self.images[i].get_positions()
+        p_p = self.images[i + 1].get_positions()
+        nt_m = np.vdot(p - p_m, p - p_m)**0.5
+        nt_p = np.vdot(p_p - p, p_p - p)**0.5
+        return (nt_p - nt_m) * self.k * t
+
+    def get_full_image_spring_force(self, i):
+        p_m = self.images[i - 1].get_positions()
+        p = self.images[i].get_positions()
+        p_p = self.images[i + 1].get_positions()
+        t_m = p - p_m
+        t_p = p_p - p
+        return (t_p - t_m) * self.k
+
+    def get_image_spring_force(self, i):
+        if self.spring_force == 'norm':
+            return self.get_norm_image_spring_force(i)
+        elif self.spring_force == 'full':
+            return self.get_full_image_spring_force(i)
+        else:
+            raise NotImplementedError('Only "norm" and "full" are allowed.')
+
+    def project_forces(self, sort='real'):
         for i in range(1, self.nimages - 1):
             t = self.tangents[i]
-            nt = np.vdot(t, t)**0.5
-            f_c = self.clean_forces[i].copy()
-            fct = np.vdot(f_c, t / nt)
-            if i == self.imax and self.climb:
-                f_out = f_c - 2 * fct * t / nt
+            nt = t / np.vdot(t, t)**0.5
+            f_r = self.forces[sort][i]
+            f_r_para = np.vdot(f_r, nt) * nt
+            f_r_perp = f_r - f_r_para
+            if self.climb and i == self.imax:
+                self.forces['neb'][i] = f_r - 2 * f_r_para
             else:
-                t_m = self.images[i].get_positions() - \
-                      self.images[i-1].get_positions()
-                t_p = self.images[i+1].get_positions() - \
-                      self.images[i].get_positions()
-                nt_m = np.vdot(t_m, t_m)**0.5
-                nt_p = np.vdot(t_p, t_p)**0.5
-
-                # Calculate the various force components
-                f_c_para = fct * t / nt
-                f_c_perp = f_c - f_c_para
-                f_s = k * t_p - k * t_m
-                fst = np.vdot(f_s, t / nt)
-                f_s_para = fst * t / nt
-                f_s_perp = f_s - f_s_para
-                f_s_new = (nt_p - nt_m) * k * t / nt
-#                f_s_old = np.vdot(t_p - t_m, t) * k * t / nt**2
-                f_s_dneb = f_s_perp - np.vdot(f_s_perp, f_c_perp) * f_c_perp / norm(f_c_perp)**0.5
-
-                f_s_new = k * (norm(t_p) - norm(t_m)) * normalize(t)
-
-                #print i
-                #print f_s_dneb[-1], norm(f_s_dneb)
-                if self.second_NEB: # TESTING ???
-                    m = self.first_modes[i]
-                    tf = (np.vdot(f_s_dneb, (t / nt)))
-                    mf = (np.vdot(f_s_dneb, m))
-                    f_s_dneb = tf * t / nt + mf * m
-                    tf = (np.vdot(f_s_perp, (t / nt)))
-                    mf = (np.vdot(f_s_perp, m))
-                    f_s_perp = tf * t / nt + mf * m
-                    bla = f_s_perp
-                    if self.dneb:
-                        bla = f_s_dneb
-                else:
-                    bla = None
-                #print f_s_dneb[-1], norm(f_s_dneb)
-                #print '-'*30
-
-                # The output force
-                if self.dneb:
-                    f_out = f_c_perp + f_s_para + f_s_dneb
-                elif self.perp:
-                    f_out = f_c_perp + f_s_para + f_s_perp
-                else:
-                    f_out = f_c_perp + f_s_para
-#                f_out = f_c_perp + f_s_para + f_s_perp
-
-                if bla is not None:
-                    f_out = f_c_perp + f_s_new + bla
-                else:
-                    if self.perp:
-                        f_out = f_c_perp + f_s_new + f_s_perp
-                    elif self.dneb:
-                        f_out = f_c_perp + f_s_new + f_s_dneb
-                    else:
-                        f_out = f_c_perp + f_s_new
-
-
-            self.projected_forces[i] = f_out.copy()
+                f_s = self.get_image_spring_force(i)
+                self.forces['spring'][i] = f_s
+                self.forces['neb'][i] = f_r_perp + f_s
 
     def get_potential_energy(self):
         return self.emax

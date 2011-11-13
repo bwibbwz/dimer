@@ -313,8 +313,6 @@ class MinModeControl:
         # Initialize the counters
         self.counters = {'forcecalls': 0, 'rotcount': 0, 'optcount': 0}
 
-        self.log()
-
     def initialize_logfiles(self, logfile=None, eigenmode_logfile=None):
         """Set up the log files."""
         # Set up the regular logfile
@@ -384,6 +382,14 @@ class MinModeControl:
         """Reset all counters."""
         for key in self.counters.keys():
             self.counters[key] = 0
+
+    def copy(self):
+        control = self.__class__()
+        for key in self.parameters.keys():
+            value = self.parameters[key]
+            if value != control.get_parameter(key):
+                control.set_parameter(key, value)
+        return control
 
 class DimerControl(MinModeControl):
     """A class that takes care of the parameters needed for a Dimer search.
@@ -509,12 +515,13 @@ class MinModeAtoms:
         modified version the current time.
 
     """
-    def __init__(self, atoms, control=None, eigenmodes=None, random_seed=None, **kwargs):
+    def __init__(self, atoms, control=None, eigenmodes=None, basis=None, random_seed=None, **kwargs):
         self.minmode_init = True
         self.atoms = atoms
 
         # Initialize to None to avoid strange behaviour due to __getattr__
         self.eigenmodes = eigenmodes
+        self.basis = basis
         self.curvatures = None
 
         if control is None:
@@ -538,6 +545,9 @@ class MinModeAtoms:
                     self.control.set_parameter(key, kwargs[key])
             self.control.initialize_logfiles(logfile = logfile,
                                              eigenmode_logfile = mlogfile)
+
+        # Print the log header
+        self.control.log()
 
         # Seed the randomness
         if random_seed is None:
@@ -677,8 +687,19 @@ class MinModeAtoms:
         for k in range(order):
             if k > 0:
                 self.ensure_eigenmode_orthogonality(k + 1)
+                basis = self.eigenmodes[:k]
+            else:
+                basis = []
+            if self.basis is not None:
+                if self.basis.shape == self.eigenmodes[0].shape:
+                    basis.append(self.basis)
+                elif self.basis.shape[1:] == self.eigenmodes[0].shape:
+                    for base in self.basis:
+                        basis.append(base)
+                else:
+                    raise ValueError('The basis definition was not understood.')
             search = DimerEigenmodeSearch(self, self.control, \
-                eigenmode = self.eigenmodes[k], basis = self.eigenmodes[:k])
+                eigenmode = self.eigenmodes[k], basis = basis)
             search.converge_to_eigenmode()
             search.set_up_for_optimization_step()
             self.eigenmodes[k] = search.get_eigenmode()
@@ -732,6 +753,9 @@ class MinModeAtoms:
         """Return the current eigenmode guess."""
         return self.eigenmodes[order - 1]
 
+    def get_basis(self):
+        return self.basis
+
     def get_atoms(self):
         """Return the unextended Atoms object."""
         return self.atoms
@@ -747,6 +771,9 @@ class MinModeAtoms:
     def set_curvature(self, curvature, order=1):
         """Set the eigenvalue estimate."""
         self.curvatures[order - 1] = curvature
+
+    def set_basis(self, basis):
+        self.basis = basis
 
     # Pipe all the stuff from Atoms that is not overwritten.
     # Pipe all requests for get_original_* to self.atoms0.
