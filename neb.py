@@ -42,6 +42,9 @@ class NEB:
         # This option should be available to the users
         self.spring_force = 'norm'
 
+        # ERM dev
+        self.forces['spring'] = np.zeros((self.nimages, self.natoms, 3))
+
     def interpolate(self, initial=0, final=-1):
         """Interpolate linearly between initial and final images."""
         if final < 0:
@@ -181,6 +184,7 @@ class NEB:
                 self.forces['neb'][i] = f_r - 2 * f_r_para
             else:
                 f_s = self.get_image_spring_force(i)
+                self.forces['spring'][i] = f_s
                 self.forces['neb'][i] = f_r_perp + f_s
 
     def get_potential_energy(self):

@@ -216,6 +216,7 @@ class ERM(NEB):
             ps.append(self.images[i].get_positions())
         f_rs = self.forces['real']
         f_ds = self.forces['dimer']
+        f_ss = self.forces['spring']
         f_ns = self.forces['neb']
 
 #        ax1.text(0.6, 0.6, self.phase, color = 'k')
@@ -225,6 +226,7 @@ class ERM(NEB):
             m = normalize(ms[i]) * 0.25
             f_r = f_rs[i]
             f_d = f_ds[i]
+            f_s = f_ss[i]
             f_n = f_ns[i]
             if i in [0, n - 1]:
                 make_circle(p, 20.0, 'y', ax = ax1)
@@ -233,6 +235,7 @@ class ERM(NEB):
                     make_circle(p, 35.0, 'c', ax = ax1)
                 else:
                     make_circle(p, 35.0, 'y', ax = ax1)
+                    make_arrow(p, f_s, 'g', ax = ax1)
                 make_arrow(p, f_r, 'w', ax = ax1)
                 make_arrow(p, f_d, 'b', ax = ax1)
                 make_arrow(p, f_n, 'k', ax = ax1)
@@ -247,6 +250,7 @@ class ERM(NEB):
                         make_circle(p, 35.0, 'c', dim = [0, 2], ax = ax2)
                     else:
                         make_circle(p, 35.0, 'y', dim = [0, 2], ax = ax2)
+                        make_arrow(p, f_s, 'g', dim = [0, 2], ax = ax2)
                     make_arrow(p, f_r, 'w', dim = [0, 2], ax = ax2)
                     make_arrow(p, f_d, 'b', dim = [0, 2], ax = ax2)
                     make_arrow(p, f_n, 'k', dim = [0, 2], ax = ax2)
@@ -260,6 +264,7 @@ class ERM(NEB):
                         make_circle(p, 35.0, 'c', dim = [2, 1], ax = ax3)
                     else:
                         make_circle(p, 35.0, 'y', dim = [2, 1], ax = ax3)
+                        make_arrow(p, f_s, 'g', dim = [2, 1], ax = ax3)
                     make_arrow(p, f_r, 'w', dim = [2, 1], ax = ax3)
                     make_arrow(p, f_d, 'b', dim = [2, 1], ax = ax3)
                     make_arrow(p, f_n, 'k', dim = [2, 1], ax = ax3)
