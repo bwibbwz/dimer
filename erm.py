@@ -19,15 +19,33 @@ class ERM(NEB):
         self.images = []
         for i in range(self.nimages):
             min_control = control.copy()
-            if rank != 0:
-                logfile_new = None
+            i_num = ('%0' + str(len(str(self.nimages))) + 'i') % i
+            d_logfile_old = self.control.get_logfile()
+            m_logfile_old = self.control.get_eigenmode_logfile()
+            if d_logfile_old not in ['-', None]:
+                if type(d_logfile_old) == str:
+                    d_logfile_old = d_logfile_old.split('.')
+                else:
+                    d_logfile_old = d_logfile_old.name.split('.')
+                d_logfile_old.insert(-1, i_num)
+                d_logfile_new = '-'.join(['.'.join(d_logfile_old[:-2]), '.'.join(d_logfile_old[-2:])])
             else:
-                i_num = ('%0' + str(len(str(self.nimages))) + 'i') % i
-                logfile_old = self.control.get_logfile().name.split('.')
-                logfile_old.insert(-1, 'erm-%s' % (('%0' + str(len(str(self.nimages))) + 'i') % i))
-                logfile_new = '-'.join(['.'.join(logfile_old[:-2]), '.'.join(logfile_old[-2:])])
-                # BUG: What about the modelog?
-                min_control.initialize_logfiles(logfile = logfile_new)
+                d_logfile_new = d_logfile_old
+            if m_logfile_old not in ['-', None]:
+                if type(m_logfile_old) == str:
+                    m_logfile_old = m_logfile_old.split('.')
+                else:
+                    m_logfile_old = m_logfile_old.name.split('.')
+                m_logfile_old.insert(-1, i_num)
+                m_logfile_new = '-'.join(['.'.join(m_logfile_old[:-2]), '.'.join(m_logfile_old[-2:])])
+            else:
+                m_logfile_new = m_logfile_old
+            if i in [0, self.nimages - 1]:
+                write_rank = 0
+            else:
+                write_rank = (i - 1) * size // (self.nimages - 2)
+            min_control.set_write_rank(write_rank)
+            min_control.initialize_logfiles(logfile = d_logfile_new, eigenmode_logfile = m_logfile_new)
             image = MinModeAtoms(images[i], min_control)
             self.images.append(image)
 
