@@ -313,10 +313,13 @@ class MinModeControl:
         # Initialize the counters
         self.counters = {'forcecalls': 0, 'rotcount': 0, 'optcount': 0}
 
+        # Set the rank to write the logfile to
+        self.write_rank = 0
+
     def initialize_logfiles(self, logfile=None, eigenmode_logfile=None):
         """Set up the log files."""
         # Set up the regular logfile
-        if rank != 0:
+        if rank != self.write_rank:
             logfile = None
         elif isinstance(logfile, str):
             if logfile == '-':
@@ -327,7 +330,7 @@ class MinModeControl:
 
         # Set up the eigenmode logfile
         if eigenmode_logfile:
-            if rank != 0:
+            if rank != self.write_rank:
                 eigenmode_logfile = None
             elif isinstance(eigenmode_logfile, str):
                 if eigenmode_logfile == '-':
