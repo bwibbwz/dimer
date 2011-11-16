@@ -373,6 +373,12 @@ class MinModeControl:
         """Returns a given counter."""
         return self.counters[counter]
 
+    def get_write_rank(self, rank):
+        return self.write_rank
+
+    def set_write_rank(self, rank):
+        self.write_rank = rank
+
     def increment_counter(self, counter):
         """Increment a given counter."""
         self.counters[counter] += 1
