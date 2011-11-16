@@ -307,14 +307,14 @@ class MinModeControl:
             else:
                 self.set_parameter(key, kwargs[key], log = False)
 
+        # Set the rank to write the logfile to (important for parallel calculations)
+        self.write_rank = write_rank
+
         # Initialize the log files
         self.initialize_logfiles(logfile, eigenmode_logfile)
 
         # Initialize the counters
         self.counters = {'forcecalls': 0, 'rotcount': 0, 'optcount': 0}
-
-        # Set the rank to write the logfile to (important for parallel calculations)
-        self.write_rank = write_rank
 
     def initialize_logfiles(self, logfile=None, eigenmode_logfile=None):
         """Set up the log files."""
