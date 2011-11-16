@@ -297,7 +297,8 @@ class MinModeControl:
 
     """
     parameters = {}
-    def __init__(self, logfile = '-', eigenmode_logfile=None, write_rank=0, **kwargs):
+    def __init__(self, logfile = '-', eigenmode_logfile=None, write_rank=0, \
+                 initialize_logfiles=True, **kwargs):
         # Overwrite the defaults with the input parameters given
         for key in kwargs:
             if not key in self.parameters.keys():
@@ -311,7 +312,11 @@ class MinModeControl:
         self.write_rank = write_rank
 
         # Initialize the log files
-        self.initialize_logfiles(logfile, eigenmode_logfile)
+        if initialize_logfiles:
+            self.initialize_logfiles(logfile, eigenmode_logfile)
+        else:
+            self.logfile = logfile
+            self.eigenmode_logfile = eigenmode_logfile
 
         # Initialize the counters
         self.counters = {'forcecalls': 0, 'rotcount': 0, 'optcount': 0}
