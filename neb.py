@@ -39,6 +39,10 @@ class NEB:
         self.energies = np.zeros(self.nimages)
         self.tangents = np.zeros((self.nimages, self.natoms, 3))
 
+        # NB: Should check if the numbers are available
+        self.energies[0] = -np.inf
+        self.energies[-1] = -np.inf
+
         # This option should be available to the users
         self.spring_force = 'norm'
 
@@ -75,6 +79,7 @@ class NEB:
     def update_tangents(self):
         images = self.images
         t_m = images[1].get_positions() - images[0].get_positions()
+        self.tangents[0] = t_m.copy()
         for i in range(1, self.nimages - 1):
             t_p = (images[i + 1].get_positions() - images[i].get_positions())
             e = self.energies[i]
@@ -82,9 +87,9 @@ class NEB:
             e_p = self.energies[i + 1]
             # NB: Check the below definition, it might have been flipped to use the lower energy tangent.
             if e < e_m and e > e_p:
-                t = t_m
+                t = t_m.copy()
             elif e > e_m and e < e_p:
-                t = t_p
+                t = t_p.copy()
             else:
                 # BUG: Possible error when end images become highest.
                 e_max = max(abs(e_p - e), abs(e_m - e))
@@ -97,6 +102,7 @@ class NEB:
                 t *= (np.vdot(t_m, t_m)**0.5 + np.vdot(t_p, t_p)**0.5) / 2.0
             self.tangents[i] = t
             t_m = t_p
+        self.tangents[-1] = t_m.copy()
 
     def calculate_image_energies_and_forces(self, i):
         self.energies[i] = self.images[i].get_potential_energy()
@@ -124,7 +130,7 @@ class NEB:
                     raise RuntimeError('Parallel NEB failed')
             for i in range(1, self.nimages - 1):
                 root = (i - 1) * size // (self.nimages - 2)
-                world.broadcast(self.energies[i:i], root) # ATH
+                world.broadcast(self.energies[i : i + 1], root)
                 world.broadcast(self.forces['real'][i], root)
 
     def get_forces(self):
@@ -143,7 +149,7 @@ class NEB:
         # Prjoect the forces for each image
         self.project_forces()
 
-        print self.images[1]._calc.get_count()
+#        print self.images[1]._calc.get_count()
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def get_norm_image_spring_force(self, i):
