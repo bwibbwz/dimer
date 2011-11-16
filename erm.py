@@ -143,10 +143,10 @@ class ERM(NEB):
                 error = world.sum(0.0)
                 if error:
                     raise RuntimeError('Parallel ERM failed during eigenmode calculations.')
-#            for i in range(1, self.nimages - 1):
-#                root = (i - 1) * size // (self.nimages - 2)
-#                world.broadcast(self.energies[i:i], root) # ATH
-#                world.broadcast(self.forces['real'][i], root)
+            for i in range(1, self.nimages - 1):
+                root = (i - 1) * size // (self.nimages - 2)
+                world.broadcast(self.images[i].eigenmodes[0], root)
+#                world.broadcast(self.images[i : i + 1].curvatures, root)
         else:
             for i in range(1, self.nimages - 1):
                 self.calculate_image_eigenmode(i)
