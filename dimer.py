@@ -622,6 +622,18 @@ class MinModeAtoms:
                     'must have moved away from the original positions.' + \
                     'You have requested \'%s\'.' % method
                 raise NotImplementedError(e) # NYI
+
+            if self.basis is not None:
+                if self.basis.shape == eigenmode.shape:
+                    eigenmode -= np.vdot(eigenmode, self.basis) * self.basis
+                    eigenmode = normalize(eigenmode)
+                elif self.basis.shape[1:] == eigenmode.shape:
+                    for base in self.basis:
+                        eigenmode -= np.vdot(eigenmode, self.basis) * self.basis
+                    eigenmode = normalize(eigenmode)
+                else:
+                    raise ValueError('The basis definition was not understood.')
+
             eigenmodes = [eigenmode]
 
         # Create random higher order mode guesses
@@ -634,6 +646,16 @@ class MinModeAtoms:
                     new_pos = self.get_positions()
                     eigenmode = normalize(new_pos - pos)
                     self.set_positions(pos)
+                    if self.basis is not None:
+                        if self.basis.shape == eigenmode.shape:
+                            eigenmode -= np.vdot(eigenmode, self.basis) * self.basis
+                            eigenmode = normalize(eigenmode)
+                        elif self.basis.shape[1:] == eigenmode.shape:
+                            for base in self.basis:
+                                eigenmode -= np.vdot(eigenmode, self.basis) * self.basis
+                            eigenmode = normalize(eigenmode)
+                        else:
+                            raise ValueError('The basis definition was not understood.')
                     eigenmodes += [eigenmode]
 
         self.eigenmodes = eigenmodes

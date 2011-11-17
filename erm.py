@@ -51,7 +51,22 @@ class ERM(NEB):
             # BUG: Only the 2 first modes are being written to the modelog.
             min_control.set_write_rank(write_rank)
             min_control.initialize_logfiles(logfile = d_logfile_new, eigenmode_logfile = m_logfile_new)
-            image = MinModeAtoms(images[i], min_control)
+            if minmodes is None:
+                minmode = None
+            else:
+                minmodes = np.array(minmodes)
+                if minmodes.shape == (self.nimages, self.natoms, 3):
+                    # Assume one minmode for each image
+                    raise NotImplementedError()
+                elif minmodes.shape == (2, self.natoms, 3):
+                    # Assume end images minmodes and interpolate
+                    raise NotImplementedError()
+                elif minmodes.shape == (self.natoms, 3):
+                    minmode = [minmodes.copy()]
+                else:
+                    raise ValueError('ERM did not understand the minmodes given to it.')
+
+            image = MinModeAtoms(images[i], min_control, eigenmodes = minmode)
             self.images.append(image)
 
         self.forces['dimer'] = np.zeros((self.nimages, self.natoms, 3))
@@ -69,34 +84,6 @@ class ERM(NEB):
             self.tangents[i] = t
         self.tangents[0] = t
         self.tangents[-1] = -t
-
-        # Set up the initial minimum modes
-        if minmodes is None:
-            for i in range(self.nimages):
-                m = self.images[i]
-                m.initialize_eigenmodes()
-        else:
-            minmodes = np.array(minmodes)
-            if minmodes.shape == (self.nimages, self.natoms, 3):
-                # Assume one minmode for each image
-                raise NotImplementedError()
-            elif minmodes.shape == (2, self.natoms, 3):
-                # Assume end images minmodes and interpolate
-                raise NotImplementedError()
-            elif minmodes.shape == (self.natoms, 3):
-                # Assume the same minmode for all images
-                raise NotImplementedError()
-            else:
-                raise ValueError('ERM did not understand the minmodes given to it.')
-
-        # Ensure orthogonality of the minmodes
-        for i in range(self.nimages):
-            t = self.tangents[i]
-            nt = normalize(t)
-            m = self.images[i].get_eigenmode()
-            m -= np.vdot(m, nt) * nt
-            m = normalize(m)
-            self.images[i].set_eigenmode(m)
 
         # These should be user variables
         self.decouple_modes = False # Release the orthogonality constraint of the minmode and tanget.
