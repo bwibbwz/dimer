@@ -47,8 +47,6 @@ class ERM(NEB):
             else:
                 write_rank = (i - 1) * size // (self.nimages - 2)
 
-            # BUG: optcount is not being updated?
-            # BUG: Only the 2 first modes are being written to the modelog.
             min_control.set_write_rank(write_rank)
             min_control.initialize_logfiles(logfile = d_logfile_new, eigenmode_logfile = m_logfile_new)
             if minmodes is None:
