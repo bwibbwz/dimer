@@ -151,7 +151,7 @@ class ERM(NEB):
             nt = normalize(self.tangents[i])
             img.set_basis(nt)
             img.set_eigenmode(normalize(perpendicular_vector(nm, nt)))
-        img.find_eigenmodes()
+        img.get_forces()
 
     def calculate_eigenmodes(self):
         if self.parallel:

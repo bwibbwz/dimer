@@ -1182,6 +1182,7 @@ def read_eigenmode(mlog, index = -1):
             mode[k_atom][k_dim] = float(line[k_dim + 2])
         k_atom += 1
 
+    # Possible BUG: mode should be a np.array(mode).
     return mode
 
 # Aliases
