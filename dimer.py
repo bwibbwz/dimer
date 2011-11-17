@@ -641,6 +641,7 @@ class MinModeAtoms:
         if self.order > 1:
             for k in range(self.order):
                 self.ensure_eigenmode_orthogonality(k)
+        # BUG: Logging the eigenmode here with the same optcount as those who have been rotated can cause problems, in particular if the initialize function is called multiple times, like in ERM.
         self.eigenmode_log()
 
     # NB maybe this name might be confusing in context to
