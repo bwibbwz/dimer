@@ -344,7 +344,7 @@ class MinModeControl:
                     eigenmode_logfile = open(eigenmode_logfile, 'a')
         self.eigenmode_logfile = eigenmode_logfile
 
-    def log(self, parameter=None):
+    def log_header(self, parameter=None):
         """Log the parameters of the eigenmode search."""
         pass
 
@@ -482,7 +482,7 @@ class DimerControl(MinModeControl):
                   'number_of_displacement_atoms': None}
 
     # NB: Can maybe put this in EigenmodeSearch and MinModeControl
-    def log(self, parameter=None):
+    def log_header(self, parameter=None):
         """Log the parameters of the eigenmode search."""
         if self.logfile is not None:
             if parameter is not None:
@@ -561,7 +561,7 @@ class MinModeAtoms:
                                              eigenmode_logfile = mlogfile)
 
         # Print the log header
-        self.control.log()
+        self.control.log_header()
 
         # Seed the randomness
         if random_seed is None:
