@@ -97,8 +97,9 @@ class ERM(NEB):
         self.yrange = None
 
     def calculate_image_energies_and_forces(self, i):
-        self.energies[i] = self.images[i].get_potential_energy()
         self.forces['real'][i] = self.images[i].get_forces(real = True)
+        self.energies[i] = self.images[i].get_potential_energy()
+
 
     def get_forces(self):
         """Evaluate and return the forces."""
@@ -152,6 +153,8 @@ class ERM(NEB):
                 if error:
                     raise RuntimeError('Parallel ERM failed during eigenmode calculations.')
             for i in range(1, self.nimages - 1):
+                if self.images[i].eigenmodes is None:
+                    self.images[i].eigenmodes = [np.zeros(self.images[i].get_positions().shape)]
                 root = (i - 1) * size // (self.nimages - 2)
                 world.broadcast(self.images[i].eigenmodes[0], root)
 #                world.broadcast(self.images[i : i + 1].curvatures, root)
