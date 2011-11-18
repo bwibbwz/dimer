@@ -699,6 +699,7 @@ class MinModeAtoms:
         if real and pos is None:
             return self.forces0
         elif real and pos != None:
+            print 'POS', rank, pos
             old_pos = self.atoms.get_positions()
             self.atoms.set_positions(pos)
             forces = self.atoms.get_forces()

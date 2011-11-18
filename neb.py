@@ -105,8 +105,8 @@ class NEB:
         self.tangents[-1] = t_m.copy()
 
     def calculate_image_energies_and_forces(self, i):
-        self.energies[i] = self.images[i].get_potential_energy()
         self.forces['real'][i] = self.images[i].get_forces()
+        self.energies[i] = self.images[i].get_potential_energy()
 
     def calculate_energies_and_forces(self):
         images = self.images
