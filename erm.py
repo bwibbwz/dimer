@@ -110,9 +110,6 @@ class ERM(NEB):
 
         # Update the clean forces and energies
         self.calculate_energies_and_forces()
-        for k in range(1, self.nimages - 1):
-            print 'FOR', k, rank, self.forces['real'][k][-1]
-            print 'EIG0', k, rank, self.images[k].eigenmodes
 
         if self.parallel and propagate_initial_values:
             for i in range(1, self.nimages - 1):
@@ -124,9 +121,6 @@ class ERM(NEB):
 
                 root = (i - 1) * size // (self.nimages - 2)
                 world.broadcast(self.images[i].eigenmodes[0], root)
-
-        for k in range(1, self.nimages - 1):
-            print 'EIG1', k, rank, self.images[k].eigenmodes[0][-1]
 
         # Update the highest energy image
         self.imax = 1 + np.argsort(self.energies[1:-1])[-1]
@@ -140,11 +134,6 @@ class ERM(NEB):
 
         # Calculate the modes
         self.calculate_eigenmodes()
-
-        for k in range(1, self.nimages - 1):
-            print 'EIG2', k, rank, self.images[k].eigenmodes[0][-1]
-
-#        raise RuntimeError('I want to stop here!')
 
         # Prjoect the forces for each image
         self.invert_eigenmode_forces()
@@ -169,27 +158,15 @@ class ERM(NEB):
         if self.parallel:
             i = rank * (self.nimages - 2) // size + 1
             try:
-                for k in range(1, self.nimages - 1):
-                    print 'BLA', k, i, rank, self.images[k].eigenmodes[0][-1], self.images[k].minmode_init
-                print 'rass0', rank
                 self.calculate_image_eigenmode(i)
-                print 'rass1', rank
             except:
                 # Make sure other images also fail:
-                print 'rass2', rank
                 error = world.sum(1.0)
-                print 'rass3', rank
                 raise
-                print 'rass4', rank
             else:
-                print 'rass5', rank
                 error = world.sum(0.0)
-                print 'rass6', rank
                 if error:
-                    print 'rass7', rank
                     raise RuntimeError('Parallel ERM failed during eigenmode calculations.')
-                    print 'rass8', rank
-                print 'rass9', rank
             for i in range(1, self.nimages - 1):
                 if self.images[i].eigenmodes is None:
                     self.images[i].eigenmodes = [np.zeros(self.images[i].get_positions().shape)]
