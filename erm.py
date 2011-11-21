@@ -83,7 +83,7 @@ class ERM(NEB):
         self.tangents[0] = t
         self.tangents[-1] = -t
 
-        # These should be user variables
+        # Save user variables
         self.decouple_modes = decouple_modes # Release the orthogonality constraint of the minmode and tanget.
 
         # Development stuff
