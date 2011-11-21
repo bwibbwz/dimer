@@ -8,7 +8,7 @@ from ase.dimer import normalize, DimerEigenmodeSearch, MinModeAtoms, perpendicul
 from ase.dimer import norm, parallel_vector, DimerControl
 
 class ERM(NEB):
-    def __init__(self, images, control, k=1.0, climb=False, parallel=False, minmodes=None):
+    def __init__(self, images, control, k=1.0, climb=False, parallel=False, minmodes=None, decouple_modes=False):
         self.control = control
         NEB.__init__(self, images, k, climb, parallel)
 
@@ -84,7 +84,7 @@ class ERM(NEB):
         self.tangents[-1] = -t
 
         # These should be user variables
-        self.decouple_modes = False # Release the orthogonality constraint of the minmode and tanget.
+        self.decouple_modes = decouple_modes # Release the orthogonality constraint of the minmode and tanget.
 
         # Development stuff
         self.plot_devplot = False
