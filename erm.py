@@ -96,6 +96,10 @@ class ERM(NEB):
         self.xrange = None
         self.yrange = None
 
+        # Testing stuff
+        self.reduce_containment = False
+        self.containment_factor = 1.0
+
     def calculate_image_energies_and_forces(self, i):
         self.forces['real'][i] = self.images[i].get_forces(real = True)
         self.energies[i] = self.images[i].get_potential_energy()
@@ -144,14 +148,24 @@ class ERM(NEB):
         self.control.increment_counter('optcount')
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
-    def adjust_projected_forces(self):
+    def project_forces(self, sort='dimer'):
         for i in range(1, self.nimages - 1):
-            f_s = self.forces['spring'][i]
-            f_r = self.forces['real'][i]
-            f_d = self.forces['dimer'][i]
-            # IDEA: Make the spring force in one function (NEB) and combine them in a different one (NEB and ERM(NEB)).
-            #       That would make this function obsolete
-            # VERY INCOMPLETE
+            t = self.tangents[i]
+            nt = t / np.vdot(t, t)**0.5
+            f_r = self.forces[sort][i]
+            f_r_para = np.vdot(f_r, nt) * nt
+            f_r_perp = f_r - f_r_para
+            if self.climb and i == self.imax:
+                self.forces['neb'][i] = f_r - 2 * f_r_para
+            else:
+                f_s = self.get_image_spring_force(i)
+                if self.reduce_containment:
+                    f_s_para = np.vdot(f_s, nt) * nt
+                    f_s_perp = f_s - f_s_para
+                    f_s_perp *= self.containment_factor
+                    f_s = f_s_perp + f_s_para
+                self.forces['spring'][i] = f_s
+                self.forces['neb'][i] = f_r_perp + f_s
 
     def calculate_image_eigenmode(self, i):
         img = self.images[i]
