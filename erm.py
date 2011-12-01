@@ -138,10 +138,20 @@ class ERM(NEB):
         # Prjoect the forces for each image
         self.invert_eigenmode_forces()
         self.project_forces(sort = 'dimer')
+        self.adjust_projected_forces()
         if self.plot_devplot:
             self.plot_pseudo_3d_pes()
         self.control.increment_counter('optcount')
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
+
+    def adjust_projected_forces(self):
+        for i in range(1, self.nimages - 1):
+            f_s = self.forces['spring'][i]
+            f_r = self.forces['real'][i]
+            f_d = self.forces['dimer'][i]
+            # IDEA: Make the spring force in one function (NEB) and combine them in a different one (NEB and ERM(NEB)).
+            #       That would make this function obsolete
+            # VERY INCOMPLETE
 
     def calculate_image_eigenmode(self, i):
         img = self.images[i]
