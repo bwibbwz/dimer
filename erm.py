@@ -98,6 +98,7 @@ class ERM(NEB):
 
         # Testing stuff
         self.reduce_containment = False
+        self.reduce_containment_tol = 0.01
         self.containment_factor = 1.0
 
     def calculate_image_energies_and_forces(self, i):
@@ -160,6 +161,11 @@ class ERM(NEB):
             else:
                 f_s = self.get_image_spring_force(i)
                 if self.reduce_containment:
+                    if ((f_r_perp + f_s)**2).sum(axis=1).max())**0.5 <= self.reduce_containment_tol:
+                        if self.containment_factor > 0.0:
+                            self.containment_factor -= 0.1
+                        else:
+                            self.containment_factor = 0.0
                     f_s_para = np.vdot(f_s, nt) * nt
                     f_s_perp = f_s - f_s_para
                     f_s_perp *= self.containment_factor
