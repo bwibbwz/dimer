@@ -143,7 +143,6 @@ class ERM(NEB):
         # Prjoect the forces for each image
         self.invert_eigenmode_forces()
         self.project_forces(sort = 'dimer')
-        self.adjust_projected_forces()
         if self.plot_devplot:
             self.plot_pseudo_3d_pes()
         self.control.increment_counter('optcount')
@@ -161,7 +160,7 @@ class ERM(NEB):
             else:
                 f_s = self.get_image_spring_force(i)
                 if self.reduce_containment:
-                    if ((f_r_perp + f_s)**2).sum(axis=1).max())**0.5 <= self.reduce_containment_tol:
+                    if (((f_r_perp + f_s)**2).sum(axis=1).max())**0.5 <= self.reduce_containment_tol:
                         if self.containment_factor > 0.0:
                             self.containment_factor -= 0.1
                         else:
