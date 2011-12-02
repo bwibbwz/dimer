@@ -149,6 +149,7 @@ class ERM(NEB):
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def project_forces(self, sort='dimer'):
+        reduced = False
         for i in range(1, self.nimages - 1):
             t = self.tangents[i]
             nt = t / np.vdot(t, t)**0.5
@@ -160,11 +161,12 @@ class ERM(NEB):
             else:
                 f_s = self.get_image_spring_force(i)
                 if self.reduce_containment:
-                    if (((f_r_perp + f_s)**2).sum(axis=1).max())**0.5 <= self.reduce_containment_tol:
-                        if self.containment_factor > 0.0:
-                            self.containment_factor -= 0.1
-                        else:
+                    if (((f_r_perp + f_s)**2).sum(axis=1).max())**0.5 <= self.reduce_containment_tol and not reduced:
+                        self.containment_factor -= 0.1
+                        reduced = True
+                        if self.containment_factor < 0.0:
                             self.containment_factor = 0.0
+#                    print self.containment_factor
                     f_s_para = np.vdot(f_s, nt) * nt
                     f_s_perp = f_s - f_s_para
                     f_s_perp *= self.containment_factor
