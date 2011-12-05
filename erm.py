@@ -151,11 +151,12 @@ class ERM(NEB):
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def adjust_containment_forces(self):
-        if ((self.forces['neb'][1:self.nimages-1].reshape((-1, 3))**2).sum(axis=1).max())**0.5 < self.reduce_containment_tol:
+        norm_force = ((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3))**2).sum(axis=1).max())**0.5
+        if norm_force < self.reduce_containment_tol:
             self.containment_factor -= 0.1
             if self.containment_factor < 0.0:
                 self.containment_factor = 0.0
-        print self.containment_factor, ((self.forces['neb'][1:self.nimages-1].reshape((-1, 3))**2).sum(axis=1).max())**0.5
+        print self.containment_factor, norm_force
         for i in range(1, self.nimages - 1):
             if self.climb and i == self.imax:
                 pass
@@ -318,15 +319,15 @@ class ERM(NEB):
 #        ax1.text(0.6, 0.6, self.phase, color = 'k')
         for i in range(n):
             p = ps[i]
-            t = normalize(ts[i]) * 0.25
-            m = normalize(ms[i]) * 0.25
-            f_r = f_rs[i]
-            f_d = f_ds[i]
-            f_s = f_ss[i]
-            f_n = f_ns[i]
             if i in [0, n - 1]:
                 make_circle(p, 20.0, 'y', ax = ax1)
             else:
+                t = normalize(ts[i]) * 0.25
+                m = normalize(ms[i]) * 0.25
+                f_r = f_rs[i]
+                f_d = f_ds[i]
+                f_s = f_ss[i]
+                f_n = f_ns[i]
                 if self.climb and i == self.imax:
                     make_circle(p, 35.0, 'c', ax = ax1)
                 else:
@@ -406,6 +407,12 @@ class ERM(NEB):
                 else:
                     axis2.set_xlim(xmin = 0.0, xmax = 5.0)
                     axis3.set_ylim(ymin = 0.0, ymax = 5.0)
+            zrange = [min([p[-1][2] for p in ps[1:-1]]), max([p[-1][2] for p in ps[1:-1]])]
+#            zdiff = zrange[-1] - zrange[0]
+            zrange[0] -= 0.1
+            zrange[-1] += 0.1
+            axis2.set_ylim(ymin = zrange[0], ymax = zrange[-1])
+            axis3.set_xlim(xmin = zrange[0], xmax = zrange[-1])
 #            axis2.set_ylim(ymin = -3.0e-9, ymax = 3.0e-9)
 
         plt.savefig('_fig-' + animate + '.png')
