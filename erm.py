@@ -143,20 +143,26 @@ class ERM(NEB):
         # Prjoect the forces for each image
         self.invert_eigenmode_forces()
         self.project_forces(sort = 'dimer')
+#        norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
+#        print norm_force
         if self.reduce_containment:
             self.adjust_containment_forces()
         if self.plot_devplot:
             self.plot_pseudo_3d_pes()
+#        norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
+#        print norm_force
         self.control.increment_counter('optcount')
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def adjust_containment_forces(self):
-        norm_force = ((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3))**2).sum(axis=1).max())**0.5
-        if norm_force < self.reduce_containment_tol:
-            self.containment_factor -= 0.1
-            if self.containment_factor < 0.0:
-                self.containment_factor = 0.0
-        print self.containment_factor, norm_force
+#        f_n = self.forces['neb']
+#        print f_n
+#        norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
+#        if norm_force < self.reduce_containment_tol:
+#            self.containment_factor -= 0.1
+#            if self.containment_factor < 0.0:
+#                self.containment_factor = 0.0
+#        print self.containment_factor, norm_force
         for i in range(1, self.nimages - 1):
             if self.climb and i == self.imax:
                 pass
@@ -172,6 +178,12 @@ class ERM(NEB):
                 self.forces['spring'][i] = f_s_new
 #                print self.forces['neb'][i] == f_r_perp + f_s
                 self.forces['neb'][i] = f_r_perp + f_s_new
+        norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
+        if norm_force < self.reduce_containment_tol:
+            self.containment_factor *= 0.95
+            if self.containment_factor < 0.0:
+                self.containment_factor = 0.0
+        print self.containment_factor, norm_force
 
     def project_forces(self, sort='dimer'):
         for i in range(1, self.nimages - 1):
