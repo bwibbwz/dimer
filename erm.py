@@ -98,7 +98,7 @@ class ERM(NEB):
 
         # Testing stuff
         self.reduce_containment = False
-        self.reduce_containment_tol = 0.01
+        self.reduce_containment_tol = 0.005
         self.containment_factor = 1.0
 
     def calculate_image_energies_and_forces(self, i):
@@ -143,13 +143,36 @@ class ERM(NEB):
         # Prjoect the forces for each image
         self.invert_eigenmode_forces()
         self.project_forces(sort = 'dimer')
+        if self.reduce_containment:
+            self.adjust_containment_forces()
         if self.plot_devplot:
             self.plot_pseudo_3d_pes()
         self.control.increment_counter('optcount')
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
+    def adjust_containment_forces(self):
+        if ((self.forces['neb'][1:self.nimages-1].reshape((-1, 3))**2).sum(axis=1).max())**0.5 < self.reduce_containment_tol:
+            self.containment_factor -= 0.1
+            if self.containment_factor < 0.0:
+                self.containment_factor = 0.0
+        print self.containment_factor, ((self.forces['neb'][1:self.nimages-1].reshape((-1, 3))**2).sum(axis=1).max())**0.5
+        for i in range(1, self.nimages - 1):
+            if self.climb and i == self.imax:
+                pass
+            else:
+                nt = normalize(self.tangents[i])
+                f_s = self.forces['spring'][i]
+                f_r = self.forces['real'][i]
+                f_s_para = np.vdot(f_s, nt) * nt
+                f_s_perp = f_s - f_s_para
+                f_r_para = np.vdot(f_r, nt) * nt
+                f_r_perp = f_r - f_r_para
+                f_s_new = f_s_para + f_s_perp * self.containment_factor
+                self.forces['spring'][i] = f_s_new
+#                print self.forces['neb'][i] == f_r_perp + f_s
+                self.forces['neb'][i] = f_r_perp + f_s_new
+
     def project_forces(self, sort='dimer'):
-        reduced = False
         for i in range(1, self.nimages - 1):
             t = self.tangents[i]
             nt = t / np.vdot(t, t)**0.5
@@ -160,17 +183,6 @@ class ERM(NEB):
                 self.forces['neb'][i] = f_r - 2 * f_r_para
             else:
                 f_s = self.get_image_spring_force(i)
-                if self.reduce_containment:
-                    if (((f_r_perp + f_s)**2).sum(axis=1).max())**0.5 <= self.reduce_containment_tol and not reduced:
-                        self.containment_factor -= 0.1
-                        reduced = True
-                        if self.containment_factor < 0.0:
-                            self.containment_factor = 0.0
-#                    print self.containment_factor
-                    f_s_para = np.vdot(f_s, nt) * nt
-                    f_s_perp = f_s - f_s_para
-                    f_s_perp *= self.containment_factor
-                    f_s = f_s_perp + f_s_para
                 self.forces['spring'][i] = f_s
                 self.forces['neb'][i] = f_r_perp + f_s
 
@@ -292,8 +304,12 @@ class ERM(NEB):
         ms = []
         ps = []
         for i in range(n):
-            ms.append(self.images[i].get_eigenmode())
-            ps.append(self.images[i].get_positions())
+            if i in [0, n - 1]:
+                ms.append(np.zeros((self.images[1].get_eigenmode().shape)))
+                ps.append(np.zeros((self.images[1].get_positions().shape)))
+            else:
+                ms.append(self.images[i].get_eigenmode())
+                ps.append(self.images[i].get_positions())
         f_rs = self.forces['real']
         f_ds = self.forces['dimer']
         f_ss = self.forces['spring']
