@@ -143,26 +143,14 @@ class ERM(NEB):
         # Prjoect the forces for each image
         self.invert_eigenmode_forces()
         self.project_forces(sort = 'dimer')
-#        norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
-#        print norm_force
         if self.reduce_containment:
             self.adjust_containment_forces()
         if self.plot_devplot:
             self.plot_pseudo_3d_pes()
-#        norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
-#        print norm_force
         self.control.increment_counter('optcount')
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def adjust_containment_forces(self):
-#        f_n = self.forces['neb']
-#        print f_n
-#        norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
-#        if norm_force < self.reduce_containment_tol:
-#            self.containment_factor -= 0.1
-#            if self.containment_factor < 0.0:
-#                self.containment_factor = 0.0
-#        print self.containment_factor, norm_force
         for i in range(1, self.nimages - 1):
             if self.climb and i == self.imax:
                 pass
@@ -176,9 +164,8 @@ class ERM(NEB):
                 f_r_perp = f_r - f_r_para
                 f_s_new = f_s_para + f_s_perp * self.containment_factor
                 self.forces['spring'][i] = f_s_new
-#                print self.forces['neb'][i] == f_r_perp + f_s
                 self.forces['neb'][i] = f_r_perp + f_s_new
-                print i, np.vdot(f_r_perp, f_s_perp), np.vdot(normalize(f_r_perp), normalize(f_s_perp))
+#                print i, np.vdot(f_r_perp, f_s_perp), np.vdot(normalize(f_r_perp), normalize(f_s_perp))
         norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
         if norm_force < self.reduce_containment_tol:
             self.containment_factor *= 0.95
@@ -341,6 +328,7 @@ class ERM(NEB):
                 f_d = f_ds[i]
                 f_s = f_ss[i]
                 f_n = f_ns[i]
+                f_p = f_d - np.vdot(f_d, t/0.25) * t / 0.25
                 if self.climb and i == self.imax:
                     make_circle(p, 35.0, 'c', ax = ax1)
                 else:
@@ -349,6 +337,7 @@ class ERM(NEB):
                 make_arrow(p, f_r, 'w', ax = ax1)
                 make_arrow(p, f_d, 'b', ax = ax1)
                 make_arrow(p, f_n, 'k', ax = ax1)
+                make_arrow(p, f_p, 'c', ax = ax1)
                 make_line(p, t, 'r', ax = ax1)
                 make_line(p, m, 'b', ax = ax1)
 
@@ -364,6 +353,7 @@ class ERM(NEB):
                     make_arrow(p, f_r, 'w', dim = [0, 2], ax = ax2)
                     make_arrow(p, f_d, 'b', dim = [0, 2], ax = ax2)
                     make_arrow(p, f_n, 'k', dim = [0, 2], ax = ax2)
+                    make_arrow(p, f_p, 'c', dim = [0, 2], ax = ax2)
                     make_line(p, t, 'r', dim = [0, 2], ax = ax2)
                     make_line(p, m, 'b', dim = [0, 2], ax = ax2)
 
@@ -378,6 +368,7 @@ class ERM(NEB):
                     make_arrow(p, f_r, 'w', dim = [2, 1], ax = ax3)
                     make_arrow(p, f_d, 'b', dim = [2, 1], ax = ax3)
                     make_arrow(p, f_n, 'k', dim = [2, 1], ax = ax3)
+                    make_arrow(p, f_p, 'c', dim = [2, 1], ax = ax3)
                     make_line(p, t, 'r', dim = [2, 1], ax = ax3)
                     make_line(p, m, 'b', dim = [2, 1], ax = ax3)
 
