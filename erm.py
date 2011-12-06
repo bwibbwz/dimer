@@ -178,6 +178,7 @@ class ERM(NEB):
                 self.forces['spring'][i] = f_s_new
 #                print self.forces['neb'][i] == f_r_perp + f_s
                 self.forces['neb'][i] = f_r_perp + f_s_new
+                print i, np.vdot(f_r_perp, f_s_perp), np.vdot(normalize(f_r_perp), normalize(f_s_perp))
         norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
         if norm_force < self.reduce_containment_tol:
             self.containment_factor *= 0.95
@@ -319,7 +320,7 @@ class ERM(NEB):
         for i in range(n):
             if i in [0, n - 1]:
                 ms.append(np.zeros((self.images[1].get_eigenmode().shape)))
-                ps.append(np.zeros((self.images[1].get_positions().shape)))
+                ps.append(self.images[i].get_positions())
             else:
                 ms.append(self.images[i].get_eigenmode())
                 ps.append(self.images[i].get_positions())
@@ -332,7 +333,7 @@ class ERM(NEB):
         for i in range(n):
             p = ps[i]
             if i in [0, n - 1]:
-                make_circle(p, 20.0, 'y', ax = ax1)
+                make_circle(p, 20.0, 'r', ax = ax1)
             else:
                 t = normalize(ts[i]) * 0.25
                 m = normalize(ms[i]) * 0.25
@@ -353,7 +354,7 @@ class ERM(NEB):
 
             if self.plot_subplot:
                 if i in [0, n - 1]:
-                    make_circle(p, 20.0, 'y', dim = [0, 2], ax = ax2)
+                    make_circle(p, 20.0, 'r', dim = [0, 2], ax = ax2)
                 else:
                     if self.climb and i == self.imax:
                         make_circle(p, 35.0, 'c', dim = [0, 2], ax = ax2)
@@ -367,7 +368,7 @@ class ERM(NEB):
                     make_line(p, m, 'b', dim = [0, 2], ax = ax2)
 
                 if i in [0, n - 1]:
-                    make_circle(p, 20.0, 'y', dim = [2, 1], ax = ax3)
+                    make_circle(p, 20.0, 'r', dim = [2, 1], ax = ax3)
                 else:
                     if self.climb and i == self.imax:
                         make_circle(p, 35.0, 'c', dim = [2, 1], ax = ax3)
