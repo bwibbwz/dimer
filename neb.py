@@ -85,10 +85,9 @@ class NEB:
             e = self.energies[i]
             e_m = self.energies[i - 1]
             e_p = self.energies[i + 1]
-            # NB: Check the below definition, it might have been flipped to use the lower energy tangent.
-            if e < e_m and e > e_p:
+            if (e < e_m and e > e_p) or (i == 1 and e_m == -np.inf):
                 t = t_m.copy()
-            elif e > e_m and e < e_p:
+            elif (e > e_m and e < e_p) or (i == self.nimages - 2 and e_p == -np.inf):
                 t = t_p.copy()
             else:
                 # BUG: Possible error when end images become highest.
