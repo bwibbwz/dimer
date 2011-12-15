@@ -130,7 +130,11 @@ class ERM(NEB):
         # Update the highest energy image
         self.imax = 1 + np.argsort(self.energies[1:-1])[-1]
         self.emax = self.energies[self.imax]
-        # BUG: self.imax can be an endimage.
+        if self.imax == self.nimages - 2:
+            self.imax -= 1
+        elif self.imax == 1:
+            self.imax += 1
+        # BUG: self.imax can be an endimage. Partially fixed by setting the end images energy to -np.inf (somewhere else)
 
         # Calculate the tangents of all the images
         self.update_tangents()
