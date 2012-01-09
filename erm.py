@@ -175,7 +175,7 @@ class ERM(NEB):
             self.containment_factor *= 0.95
             if self.containment_factor < 0.0:
                 self.containment_factor = 0.0
-#        print self.containment_factor, norm_force
+        print self.containment_factor, norm_force
 
     def project_forces(self, sort='dimer'):
         for i in range(1, self.nimages - 1):
