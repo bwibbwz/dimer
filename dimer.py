@@ -119,7 +119,7 @@ class DimerEigenmodeSearch:
                 self.update_virtual_forces()
             else:
                 self.update_virtual_forces(extrapolated_forces = True)
-            self.forces1A = self.forces1
+            self.forces1A = self.forces1.copy()
             self.update_curvature()
             f_rot_A = self.get_rotational_force()
 
@@ -141,7 +141,7 @@ class DimerEigenmodeSearch:
                 n_B, rot_unit_B = rotate_vectors(n_A, rot_unit_A, trial_angle)
                 self.eigenmode = n_B
                 self.update_virtual_forces()
-                self.forces1B = self.forces1
+                self.forces1B = self.forces1.copy()
 
                 # Get the curvature's derivative
                 c1d = np.vdot((self.forces2 - self.forces1), rot_unit_B) / \
