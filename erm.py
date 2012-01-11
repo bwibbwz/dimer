@@ -98,7 +98,7 @@ class ERM(NEB):
 
         # Testing stuff
         self.reduce_containment = False
-        self.reduce_containment_tol = 0.005
+        self.reduce_containment_tol = 0.010
         self.containment_factor = 1.0
 
     def calculate_image_energies_and_forces(self, i):
@@ -155,27 +155,59 @@ class ERM(NEB):
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def adjust_containment_forces(self):
+        self.adjust_containment_forces_PLAIN()
+#        self.adjust_containment_forces_NO_PLANE()
+
+    def adjust_containment_forces_NO_PLANE(self):
+        for i in range(1, self.nimages - 1):
+            if self.climb and i == self.imax:
+                pass
+            else:
+                nt = normalize(self.tangents[i])
+                nm = self.images[i].get_eigenmode()
+                f_s = self.forces['spring'][i]
+                f_d = self.forces['dimer'][i]
+                f_s_para = np.vdot(f_s, nt) * nt
+                f_s_perp = f_s - f_s_para
+                f_s_perp_in_plane = np.vdot(f_s_perp, nt) * nt + np.vdot(f_s_perp, nm) * nm
+                f_s_perp_out_plane = f_s_perp - f_s_perp_in_plane
+                f_s_new = f_s_para + f_s_perp_in_plane + f_s_perp_out_plane * self.containment_factor
+                f_d_para = np.vdot(f_d, nt) * nt
+                f_d_perp = f_d - f_d_para
+                self.forces['spring'][i] = f_s_new
+                self.forces['neb'][i] = f_d_perp + f_s_new
+        norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
+        if norm_force < self.reduce_containment_tol:
+            self.containment_factor *= (1.0 - 10.0 * (self.reduce_containment_tol - norm_force))
+            if self.containment_factor < 0.0:
+                self.containment_factor = 0.0
+        print self.containment_factor, norm_force, (1.0 - 10.0 * (self.reduce_containment_tol - norm_force))
+
+
+    def adjust_containment_forces_ALL(self):
         for i in range(1, self.nimages - 1):
             if self.climb and i == self.imax:
                 pass
             else:
                 nt = normalize(self.tangents[i])
                 f_s = self.forces['spring'][i]
-                f_r = self.forces['real'][i]
+                f_d = self.forces['dimer'][i]
                 f_s_para = np.vdot(f_s, nt) * nt
                 f_s_perp = f_s - f_s_para
-                f_r_para = np.vdot(f_r, nt) * nt
-                f_r_perp = f_r - f_r_para
+                f_d_para = np.vdot(f_d, nt) * nt
+                f_d_perp = f_d - f_d_para
                 f_s_new = f_s_para + f_s_perp * self.containment_factor
                 self.forces['spring'][i] = f_s_new
-                self.forces['neb'][i] = f_r_perp + f_s_new
+                self.forces['neb'][i] = f_d_perp + f_s_new
 #                print i, np.vdot(f_r_perp, f_s_perp), np.vdot(normalize(f_r_perp), normalize(f_s_perp))
         norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
         if norm_force < self.reduce_containment_tol:
-            self.containment_factor *= 0.95
+            self.containment_factor *= (1.0 - 10.0 * (self.reduce_containment_tol - norm_force))
             if self.containment_factor < 0.0:
                 self.containment_factor = 0.0
-        print self.containment_factor, norm_force
+#        else:
+#            self.containment_factor *= (1.0 + 10.0 * (norm_force - self.reduce_containment_tol))
+        print self.containment_factor, norm_force, (1.0 - 10.0 * (self.reduce_containment_tol - norm_force))
 
     def project_forces(self, sort='dimer'):
         for i in range(1, self.nimages - 1):
@@ -186,6 +218,7 @@ class ERM(NEB):
             f_r_perp = f_r - f_r_para
             if self.climb and i == self.imax:
                 self.forces['neb'][i] = f_r - 2 * f_r_para
+#                print 'NORMS', norm(self.forces['real'][i]), norm(self.forces['dimer'][i]), norm(self.forces['neb'][i])
             else:
                 f_s = self.get_image_spring_force(i)
                 self.forces['spring'][i] = f_s
@@ -340,10 +373,10 @@ class ERM(NEB):
                     make_arrow(p, f_s, 'g', ax = ax1)
                 make_arrow(p, f_r, 'w', ax = ax1)
                 make_arrow(p, f_d, 'b', ax = ax1)
-                make_arrow(p, f_n, 'k', ax = ax1)
                 make_arrow(p, f_p, 'c', ax = ax1)
                 make_line(p, t, 'r', ax = ax1)
                 make_line(p, m, 'b', ax = ax1)
+                make_arrow(p, f_n, 'k', ax = ax1)
 
             if self.plot_subplot:
                 if i in [0, n - 1]:
@@ -356,10 +389,10 @@ class ERM(NEB):
                         make_arrow(p, f_s, 'g', dim = [0, 2], ax = ax2)
                     make_arrow(p, f_r, 'w', dim = [0, 2], ax = ax2)
                     make_arrow(p, f_d, 'b', dim = [0, 2], ax = ax2)
-                    make_arrow(p, f_n, 'k', dim = [0, 2], ax = ax2)
                     make_arrow(p, f_p, 'c', dim = [0, 2], ax = ax2)
                     make_line(p, t, 'r', dim = [0, 2], ax = ax2)
                     make_line(p, m, 'b', dim = [0, 2], ax = ax2)
+                    make_arrow(p, f_n, 'k', dim = [0, 2], ax = ax2)
 
                 if i in [0, n - 1]:
                     make_circle(p, 20.0, 'r', dim = [2, 1], ax = ax3)
@@ -371,10 +404,10 @@ class ERM(NEB):
                         make_arrow(p, f_s, 'g', dim = [2, 1], ax = ax3)
                     make_arrow(p, f_r, 'w', dim = [2, 1], ax = ax3)
                     make_arrow(p, f_d, 'b', dim = [2, 1], ax = ax3)
-                    make_arrow(p, f_n, 'k', dim = [2, 1], ax = ax3)
                     make_arrow(p, f_p, 'c', dim = [2, 1], ax = ax3)
                     make_line(p, t, 'r', dim = [2, 1], ax = ax3)
                     make_line(p, m, 'b', dim = [2, 1], ax = ax3)
+                    make_arrow(p, f_n, 'k', dim = [2, 1], ax = ax3)
 
         if self.plot_e is not None:
             ax1.contourf(self.plot_x, self.plot_y, self.plot_e, 30)
