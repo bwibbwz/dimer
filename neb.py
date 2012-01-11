@@ -160,18 +160,30 @@ class NEB:
         nt_p = np.vdot(p_p - p, p_p - p)**0.5
         return (nt_p - nt_m) * self.k * t
 
-#    def get_dneb_images_spring_forces(self, i):
-#        t = self.tangents[i]
-#        nt = t / np.vdot(t, t)**0.5
-#        p_m = self.images[i - 1].get_positions()
-#        p = self.images[i].get_positions()
-#        p_p = self.images[i + 1].get_positions()
-#        t_m = p - p_m
-#        t_p = p_p - p
-#        full = (t_p - t_m) * self.k
-#        f_s_para = np.vdot(full, nt) * nt
-#        p_s_perp = 'Some DNEB magic'
-        
+    def get_dneb_images_spring_forces(self, i, sw=True):
+        t = self.tangents[i]
+        nt = t / np.vdot(t, t)**0.5
+        p_m = self.images[i - 1].get_positions()
+        p = self.images[i].get_positions()
+        p_p = self.images[i + 1].get_positions()
+        t_m = p - p_m
+        t_p = p_p - p
+        full = (t_p - t_m) * self.k
+        f_s_para = np.vdot(full, nt) * nt
+        f_s_perp = f_s - f_s_para
+        try:
+            f_r = self.forces['dimer'][i]
+        except:
+            f_r = self.forces['real'][i]
+        f_r_para = np.vdot(f_r, nt) * nt
+        f_r_para = f_r - f_r_para
+        nf_r_perp = f_r_perp / np.vdot(f_r_perp, f_r_perp)**0.5
+        f_s_dneb = f_s_perp - np.vdot(f_s_perp, nf_r_perp) * nf_r_perp
+        if sw:
+            f_s_swdneb = 2 * arctan(np.vdot(f_r_perp, f_r_perp) / np.vdot(f_s_perp)) * f_s_dneb / np.pi
+            return f_s_para + f_s_swdneb
+        else:
+            return f_s_para + f_s_dneb
 
     def get_full_image_spring_force(self, i):
         p_m = self.images[i - 1].get_positions()
@@ -182,12 +194,17 @@ class NEB:
         return (t_p - t_m) * self.k
 
     def get_image_spring_force(self, i):
+        # NB: This needs to be more intelligent. There is a LOT of identical code in the individual functions which can most likely be reduced by calculating each bit in functions and combining them here for the appropriate effect.
         if self.spring_force == 'norm':
             return self.get_norm_image_spring_force(i)
         elif self.spring_force == 'full':
             return self.get_full_image_spring_force(i)
+        elif self.spring_force == 'dneb':
+            return self.get_dneb_image_spring_force(i, sw = False)
+        elif self.spring_force == 'swdneb':
+            return self.get_dneb_image_spring_force(i, sw = True)
         else:
-            raise NotImplementedError('Only "norm" and "full" are allowed.')
+            raise NotImplementedError('Only ["norm", "full", "dneb", "swdneb"] are allowed.')
 
     def project_forces(self, sort='real'):
         for i in range(1, self.nimages - 1):
