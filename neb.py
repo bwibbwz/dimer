@@ -85,9 +85,9 @@ class NEB:
             e = self.energies[i]
             e_m = self.energies[i - 1]
             e_p = self.energies[i + 1]
-            if (e < e_m and e > e_p) or (i == 1 and e_m == -np.inf):
+            if (e < e_m and e > e_p) or (i == self.nimages - 2 and e_p == -np.inf):
                 t = t_m.copy()
-            elif (e > e_m and e < e_p) or (i == self.nimages - 2 and e_p == -np.inf):
+            elif (e > e_m and e < e_p) or (i == 1 and e_m == -np.inf):
                 t = t_p.copy()
             else:
                 # BUG: Possible error when end images become highest.
@@ -159,6 +159,19 @@ class NEB:
         nt_m = np.vdot(p - p_m, p - p_m)**0.5
         nt_p = np.vdot(p_p - p, p_p - p)**0.5
         return (nt_p - nt_m) * self.k * t
+
+#    def get_dneb_images_spring_forces(self, i):
+#        t = self.tangents[i]
+#        nt = t / np.vdot(t, t)**0.5
+#        p_m = self.images[i - 1].get_positions()
+#        p = self.images[i].get_positions()
+#        p_p = self.images[i + 1].get_positions()
+#        t_m = p - p_m
+#        t_p = p_p - p
+#        full = (t_p - t_m) * self.k
+#        f_s_para = np.vdot(full, nt) * nt
+#        p_s_perp = 'Some DNEB magic'
+        
 
     def get_full_image_spring_force(self, i):
         p_m = self.images[i - 1].get_positions()
