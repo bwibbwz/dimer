@@ -13,6 +13,7 @@ class ERM(NEB):
         NEB.__init__(self, images, k, climb, parallel)
 
         self.spring_force = 'full'
+        self.decouple_inidividual_modes = []
 
         # Set up MinModeAtoms objects for each image and make individual logfiles for each
         # NB: Shouldn't there be a ERM_Control class that takes care of this crap?
@@ -152,10 +153,12 @@ class ERM(NEB):
         if self.plot_devplot:
             self.plot_pseudo_3d_pes()
         self.control.increment_counter('optcount')
+#        for k in range(1, self.nimages - 1):
+#            print np.vdot(normalize(self.tangents[k]), self.images[k].get_eigenmode())
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def adjust_containment_forces(self):
-        self.adjust_containment_forces_PLAIN()
+        self.adjust_containment_forces_ALL()
 #        self.adjust_containment_forces_NO_PLANE()
 
     def adjust_containment_forces_NO_PLANE(self):
@@ -226,7 +229,7 @@ class ERM(NEB):
 
     def calculate_image_eigenmode(self, i):
         img = self.images[i]
-        if self.decouple_modes:
+        if self.decouple_modes or i in self.decouple_individual_modes:
             img.set_basis(None)
         else:
             nm = normalize(img.get_eigenmode())

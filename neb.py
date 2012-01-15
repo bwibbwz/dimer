@@ -7,6 +7,7 @@ Make it possible to seperate optimizers for each image. (might help in order to 
 '''
 
 import numpy as np
+from math import atan, pi
 
 from ase.parallel import world, rank, size
 from ase.calculators.singlepoint import SinglePointCalculator
@@ -80,6 +81,10 @@ class NEB:
         images = self.images
         t_m = images[1].get_positions() - images[0].get_positions()
         self.tangents[0] = t_m.copy()
+        try:
+            self.decouple_individual_modes = []
+        except:
+            pass
         for i in range(1, self.nimages - 1):
             t_p = (images[i + 1].get_positions() - images[i].get_positions())
             e = self.energies[i]
@@ -160,7 +165,7 @@ class NEB:
         nt_p = np.vdot(p_p - p, p_p - p)**0.5
         return (nt_p - nt_m) * self.k * t
 
-    def get_dneb_images_spring_forces(self, i, sw=True):
+    def get_dneb_image_spring_force(self, i, sw=True):
         t = self.tangents[i]
         nt = t / np.vdot(t, t)**0.5
         p_m = self.images[i - 1].get_positions()
@@ -168,19 +173,20 @@ class NEB:
         p_p = self.images[i + 1].get_positions()
         t_m = p - p_m
         t_p = p_p - p
-        full = (t_p - t_m) * self.k
-        f_s_para = np.vdot(full, nt) * nt
+        f_s = (t_p - t_m) * self.k
+        f_s_para = np.vdot(f_s, nt) * nt
         f_s_perp = f_s - f_s_para
         try:
             f_r = self.forces['dimer'][i]
         except:
             f_r = self.forces['real'][i]
         f_r_para = np.vdot(f_r, nt) * nt
-        f_r_para = f_r - f_r_para
+        f_r_perp = f_r - f_r_para
         nf_r_perp = f_r_perp / np.vdot(f_r_perp, f_r_perp)**0.5
         f_s_dneb = f_s_perp - np.vdot(f_s_perp, nf_r_perp) * nf_r_perp
         if sw:
-            f_s_swdneb = 2 * arctan(np.vdot(f_r_perp, f_r_perp) / np.vdot(f_s_perp)) * f_s_dneb / np.pi
+            f_s_swdneb = 2 * atan(np.vdot(f_r_perp, f_r_perp) / np.vdot(f_s_perp, f_s_perp)) * f_s_dneb / pi
+            print i, np.vdot(f_s_dneb, f_s_dneb) / np.vdot(f_s_swdneb, f_s_swdneb)
             return f_s_para + f_s_swdneb
         else:
             return f_s_para + f_s_dneb
