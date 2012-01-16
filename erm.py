@@ -101,6 +101,7 @@ class ERM(NEB):
         self.reduce_containment = False
         self.reduce_containment_tol = 0.010
         self.containment_factor = 1.0
+        self.decouple_individual_modes = []
 
     def calculate_image_energies_and_forces(self, i):
         self.forces['real'][i] = self.images[i].get_forces(real = True)
