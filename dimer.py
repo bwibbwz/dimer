@@ -356,7 +356,7 @@ class MinModeControl:
             raise ValueError(e)
         self.parameters[parameter] = value
         if log:
-            self.log(parameter)
+            self.log_header(parameter)
 
     def get_parameter(self, parameter):
         """Returns the value of a parameter."""
