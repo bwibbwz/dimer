@@ -81,10 +81,10 @@ class NEB:
         images = self.images
         t_m = images[1].get_positions() - images[0].get_positions()
         self.tangents[0] = t_m.copy()
-        try:
-            self.decouple_individual_modes = []
-        except:
-            pass
+#        try:
+#            self.decouple_individual_modes = [1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 16, 17]
+#        except:
+#            pass
         for i in range(1, self.nimages - 1):
             t_p = (images[i + 1].get_positions() - images[i].get_positions())
             e = self.energies[i]
