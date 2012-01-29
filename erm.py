@@ -293,7 +293,12 @@ class ERM(NEB):
             img.set_basis(None)
         else:
             nm = normalize(img.get_eigenmode())
-            nt = normalize(self.tangents[i])
+            if self.reduce_containment:
+                pm = self.images[i-1].get_positions()
+                pp = self.images[i+1].get_positions()
+                nt = normalize(pp - pm)
+            else:
+                nt = normalize(self.tangents[i])
             img.set_basis(nt)
             img.set_eigenmode(normalize(perpendicular_vector(nm, nt)))
         img.get_forces()
