@@ -102,6 +102,7 @@ class ERM(NEB):
         self.reduce_containment_tol = 0.010
         self.containment_factor = 1.0
         self.decouple_individual_modes = []
+        self.containment_factors = np.ones((self.nimages))
 
     def calculate_image_energies_and_forces(self, i):
         self.forces['real'][i] = self.images[i].get_forces(real = True)
@@ -159,8 +160,66 @@ class ERM(NEB):
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def adjust_containment_forces(self):
-        self.adjust_containment_forces_ALL()
+#        self.adjust_containment_forces_ALL()
 #        self.adjust_containment_forces_NO_PLANE()
+        self.adjust_containment_forces_DOT()
+
+    def adjust_containment_forces_DOT(self):
+        for i in range(1, self.nimages - 1):
+            if self.climb and i == self.imax:
+                pass
+            else:
+                nt = normalize(self.tangents[i])
+                nm = self.images[i].get_eigenmode()
+                f_s = self.forces['spring'][i]
+                f_d = self.forces['dimer'][i]
+                f_s_para = np.vdot(f_s, nt) * nt
+                f_s_perp = f_s - f_s_para
+                f_d_para = np.vdot(f_d, nt) * nt
+                f_d_perp = f_d - f_d_para
+                f_s_perp_red = f_s_perp * self.containment_factors[i]
+                nd = normalize(f_d_perp)
+                ns = normalize(f_s_perp_red)
+                dot = np.vdot(nd, ns)
+                ratio = norm(f_s_perp_red) / norm(f_d_perp)
+                norm_force = (((f_d_perp + f_s_para + f_s_perp_red)**2).sum(axis=1).max())**0.5
+                print '%02i  % 4.3f  % 4.3f  % 4.3f' % (i, dot, ratio, self.containment_factors[i]),
+                print '% 4.3f' % norm_force,
+                if dot < -0.98 and dot > -1.02 and ratio > 0.98 and ratio < 1.02 and norm_force < self.reduce_containment_tol:
+                    if i == 1:
+                        cfp = self.containment_factors[i] / self.containment_factors[i+1]
+                        if cfp > 0.90:
+                            self.containment_factors[i] *= 0.95
+                            print 'change'
+                        else:
+                            print 'no change'
+                    elif i == self.nimages - 2:
+                        cfm = self.containment_factors[i] / self.containment_factors[i-1]
+                        if cfm > 0.90:
+                            self.containment_factors[i] *= 0.95
+                            print 'change'
+                        else:
+                            print 'no change'
+                    else:
+                        cfp = self.containment_factors[i] / self.containment_factors[i+1]
+                        cfm = self.containment_factors[i] / self.containment_factors[i-1]
+                        if cfp > 0.90 and cfm > 0.90:
+                            self.containment_factors[i] *= 0.95
+                            print 'change'
+                        else:
+                            print 'no change'
+                else:
+                    print ''
+                f_s_new = f_s_para + f_s_perp * self.containment_factors[i]
+                self.forces['spring'][i] = f_s_new
+                self.forces['neb'][i] = f_d_perp + f_s_new
+                self.containment_factors[self.imax] = min(self.containment_factors)
+#        norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
+#        if norm_force < self.reduce_containment_tol:
+#            self.containment_factor *= (1.0 - 10.0 * (self.reduce_containment_tol - norm_force))
+#            if self.containment_factor < 0.0:
+#                self.containment_factor = 0.0
+#        print self.containment_factor, norm_force, (1.0 - 10.0 * (self.reduce_containment_tol - norm_force))
 
     def adjust_containment_forces_NO_PLANE(self):
         for i in range(1, self.nimages - 1):
