@@ -124,6 +124,10 @@ class ERM(NEB):
 
         # Update the highest energy image
         self.imax = 1 + np.argsort(self.energies[1:-1])[-1]
+        if self.imax == self.nimages - 2:
+            self.imax -= 1
+        elif self.imax == 1:
+            self.imax += 1
         self.emax = self.energies[self.imax]
         # BUG: self.imax can be an endimage.
 
