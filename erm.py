@@ -14,6 +14,8 @@ class ERM(NEB):
 
         self.spring_force = 'full'
 
+        self.fix_imax = False
+
         # Set up MinModeAtoms objects for each image and make individual logfiles for each
         # NB: Shouldn't there be a ERM_Control class that takes care of this crap?
         self.images = []
@@ -123,11 +125,14 @@ class ERM(NEB):
                 world.broadcast(self.images[i].eigenmodes[0], root)
 
         # Update the highest energy image
-        self.imax = 1 + np.argsort(self.energies[1:-1])[-1]
-        if self.imax == self.nimages - 2:
-            self.imax -= 1
-        elif self.imax == 1:
-            self.imax += 1
+        if not self.fix_imax:
+            self.imax = 1 + np.argsort(self.energies[1:-1])[-1]
+            if self.imax == self.nimages - 2:
+                self.imax -= 1
+            elif self.imax == 1:
+                self.imax += 1
+        else:
+            self.imax = fix_imax
         self.emax = self.energies[self.imax]
         # BUG: self.imax can be an endimage.
 
