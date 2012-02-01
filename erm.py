@@ -132,7 +132,7 @@ class ERM(NEB):
             elif self.imax == 1:
                 self.imax += 1
         else:
-            self.imax = fix_imax
+            self.imax = self.fix_imax
         self.emax = self.energies[self.imax]
         # BUG: self.imax can be an endimage.
 
