@@ -188,23 +188,23 @@ class ERM(NEB):
                 if dot < -0.98 and dot > -1.02 and ratio > 0.98 and ratio < 1.02 and norm_force < self.reduce_containment_tol:
                     if i == 1:
                         cfp = self.containment_factors[i] / self.containment_factors[i+1]
-                        if cfp > 0.90:
-                            self.containment_factors[i] *= 0.95
+                        if cfp > 0.40:
+                            self.containment_factors[i] *= 0.70
                             print 'change'
                         else:
                             print 'no change'
                     elif i == self.nimages - 2:
                         cfm = self.containment_factors[i] / self.containment_factors[i-1]
-                        if cfm > 0.90:
-                            self.containment_factors[i] *= 0.95
+                        if cfm > 0.40:
+                            self.containment_factors[i] *= 0.70
                             print 'change'
                         else:
                             print 'no change'
                     else:
                         cfp = self.containment_factors[i] / self.containment_factors[i+1]
                         cfm = self.containment_factors[i] / self.containment_factors[i-1]
-                        if cfp > 0.90 and cfm > 0.90:
-                            self.containment_factors[i] *= 0.95
+                        if cfp > 0.40 and cfm > 0.40:
+                            self.containment_factors[i] *= 0.70
                             print 'change'
                         else:
                             print 'no change'
@@ -293,7 +293,8 @@ class ERM(NEB):
             img.set_basis(None)
         else:
             nm = normalize(img.get_eigenmode())
-            if self.reduce_containment:
+            if (self.reduce_containment or self.spring_force == 'norm') and not (self.climb and i == self.imax):
+#            if True:
                 pm = self.images[i-1].get_positions()
                 pp = self.images[i+1].get_positions()
                 nt = normalize(pp - pm)
