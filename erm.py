@@ -153,10 +153,11 @@ class ERM(NEB):
         if self.reduce_containment:
             self.adjust_containment_forces()
         if self.plot_devplot:
-            self.plot_pseudo_3d_pes()
+            self.plot_pseudo_3d_pes(img = -1)
         self.control.increment_counter('optcount')
 #        for k in range(1, self.nimages - 1):
-#            print np.vdot(normalize(self.tangents[k]), self.images[k].get_eigenmode())
+#        for k in [4, 5, 6]:
+#            print k, np.vdot(normalize(self.tangents[k]), self.images[k].get_eigenmode())
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def adjust_containment_forces(self):
@@ -293,8 +294,9 @@ class ERM(NEB):
             img.set_basis(None)
         else:
             nm = normalize(img.get_eigenmode())
-            if (self.reduce_containment or self.spring_force == 'norm') and not (self.climb and i == self.imax):
+#            if (self.reduce_containment or self.spring_force == 'norm') and not (self.climb and i == self.imax):
 #            if True:
+            if False:
                 pm = self.images[i-1].get_positions()
                 pp = self.images[i+1].get_positions()
                 nt = normalize(pp - pm)
@@ -338,7 +340,7 @@ class ERM(NEB):
 # ----------------------------------------------------------------
 # --------------- Outdated and development methods ---------------
 # ----------------------------------------------------------------
-    def plot_pseudo_3d_pes(self):
+    def plot_pseudo_3d_pes(self, img=-1):
         import pylab as plt
         from pylab import subplot, subplot2grid
         fig = plt.figure(figsize = (8,8))
@@ -356,8 +358,8 @@ class ERM(NEB):
             ax3 = None
 
         def make_line(pos, orient, c, size=0.2, width=1, dim=[0, 1], ax=plt):
-            p = pos[-1]
-            o = orient[-1]
+            p = pos[img]
+            o = orient[img]
             d1 = dim[0]
             d2 = dim[1]
             ax.plot((p[d1] - o[d1] * size, p[d1] + o[d1] * size), (p[d2] - o[d2] * size, p[d2] + o[d2] * size), c, lw = width)
@@ -368,8 +370,8 @@ class ERM(NEB):
                 y = ax2_base_scale
             else:
                 y = base_scale
-            p = pos[-1]
-            e = end[-1]
+            p = pos[img]
+            e = end[img]
             d1 = dim[0]
             d2 = dim[1]
 
@@ -400,7 +402,7 @@ class ERM(NEB):
             ax.plot((b1, e1, c1), (b2, e2, c2), c, lw = width)
 
         def make_circle(pos, r, c, dim=[0, 1], ax=plt):
-            p = pos[-1]
+            p = pos[img]
             d1 = dim[0]
             d2 = dim[1]
             ax.plot((p[d1]), (p[d2]), 'k.', markersize = r + 1)
@@ -517,7 +519,7 @@ class ERM(NEB):
                 else:
                     axis2.set_xlim(xmin = 0.0, xmax = 5.0)
                     axis3.set_ylim(ymin = 0.0, ymax = 5.0)
-            zrange = [min([p[-1][2] for p in ps[1:-1]]), max([p[-1][2] for p in ps[1:-1]])]
+            zrange = [min([p[img][2] for p in ps[1:-1]]), max([p[img][2] for p in ps[1:-1]])]
 #            zdiff = zrange[-1] - zrange[0]
             zrange[0] -= 0.1
             zrange[-1] += 0.1
