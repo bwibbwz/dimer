@@ -295,8 +295,8 @@ class ERM(NEB):
         else:
             nm = normalize(img.get_eigenmode())
 #            if (self.reduce_containment or self.spring_force == 'norm') and not (self.climb and i == self.imax):
-#            if True:
-            if False:
+            if True:
+#            if False:
                 pm = self.images[i-1].get_positions()
                 pp = self.images[i+1].get_positions()
                 nt = normalize(pp - pm)
@@ -364,7 +364,15 @@ class ERM(NEB):
             d2 = dim[1]
             ax.plot((p[d1] - o[d1] * size, p[d1] + o[d1] * size), (p[d2] - o[d2] * size, p[d2] + o[d2] * size), c, lw = width)
 
+
         def make_arrow(pos, end, c, scale=1.0, width=1, dim=[0,1], ax=plt, head_scale=0.9, base_scale=0.6):
+            p = pos[img]
+            e = end[img]
+            d1 = dim[0]
+            d2 = dim[1]
+            ax.plot((p[d1], p[d1] + e[d1] * scale), (p[d2], p[d2] + e[d2] * scale), c, lw = width)
+
+        def make_arrow_BLA(pos, end, c, scale=1.0, width=1, dim=[0,1], ax=plt, head_scale=0.9, base_scale=0.6):
             x = head_scale
             if ax == ax2:
                 y = ax2_base_scale
@@ -444,7 +452,7 @@ class ERM(NEB):
                     make_arrow(p, f_s, 'g', ax = ax1)
                 make_arrow(p, f_r, 'w', ax = ax1)
                 make_arrow(p, f_d, 'b', ax = ax1)
-                make_arrow(p, f_p, 'c', ax = ax1)
+#                make_arrow(p, f_p, 'c', ax = ax1)
                 make_line(p, t, 'r', ax = ax1)
                 make_line(p, m, 'b', ax = ax1)
                 make_arrow(p, f_n, 'k', ax = ax1)
@@ -527,8 +535,8 @@ class ERM(NEB):
             axis3.set_xlim(xmin = zrange[0], xmax = zrange[-1])
 #            axis2.set_ylim(ymin = -3.0e-9, ymax = 3.0e-9)
 
-        plt.savefig('_fig-' + animate + '.png')
-#        plt.savefig('_fig-' + animate + '.svg')
+#        plt.savefig('_fig-' + animate + '.png')
+        plt.savefig('_fig-' + animate + '.svg')
 
         plt.draw()
         plt.close()
