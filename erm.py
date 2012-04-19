@@ -149,11 +149,6 @@ class ERM(NEB):
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def adjust_containment_forces(self):
-#        self.adjust_containment_forces_ALL()
-#        self.adjust_containment_forces_NO_PLANE()
-        self.adjust_containment_forces_DOT()
-
-    def adjust_containment_forces_DOT(self):
         for i in range(1, self.nimages - 1):
             if self.climb and i == self.imax:
                 pass
@@ -203,63 +198,6 @@ class ERM(NEB):
                 self.forces['spring'][i] = f_s_new
                 self.forces['neb'][i] = f_d_perp + f_s_new
                 self.containment_factors[self.imax] = min(self.containment_factors)
-#        norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
-#        if norm_force < self.reduce_containment_tol:
-#            self.containment_factor *= (1.0 - 10.0 * (self.reduce_containment_tol - norm_force))
-#            if self.containment_factor < 0.0:
-#                self.containment_factor = 0.0
-#        print self.containment_factor, norm_force, (1.0 - 10.0 * (self.reduce_containment_tol - norm_force))
-
-    def adjust_containment_forces_NO_PLANE(self):
-        for i in range(1, self.nimages - 1):
-            if self.climb and i == self.imax:
-                pass
-            else:
-                nt = normalize(self.tangents[i])
-                nm = self.images[i].get_eigenmode()
-                f_s = self.forces['spring'][i]
-                f_d = self.forces['dimer'][i]
-                f_s_para = np.vdot(f_s, nt) * nt
-                f_s_perp = f_s - f_s_para
-                f_s_perp_in_plane = np.vdot(f_s_perp, nt) * nt + np.vdot(f_s_perp, nm) * nm
-                f_s_perp_out_plane = f_s_perp - f_s_perp_in_plane
-                f_s_new = f_s_para + f_s_perp_in_plane + f_s_perp_out_plane * self.containment_factor
-                f_d_para = np.vdot(f_d, nt) * nt
-                f_d_perp = f_d - f_d_para
-                self.forces['spring'][i] = f_s_new
-                self.forces['neb'][i] = f_d_perp + f_s_new
-        norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
-        if norm_force < self.reduce_containment_tol:
-            self.containment_factor *= (1.0 - 10.0 * (self.reduce_containment_tol - norm_force))
-            if self.containment_factor < 0.0:
-                self.containment_factor = 0.0
-        print self.containment_factor, norm_force, (1.0 - 10.0 * (self.reduce_containment_tol - norm_force))
-
-
-    def adjust_containment_forces_ALL(self):
-        for i in range(1, self.nimages - 1):
-            if self.climb and i == self.imax:
-                pass
-            else:
-                nt = normalize(self.tangents[i])
-                f_s = self.forces['spring'][i]
-                f_d = self.forces['dimer'][i]
-                f_s_para = np.vdot(f_s, nt) * nt
-                f_s_perp = f_s - f_s_para
-                f_d_para = np.vdot(f_d, nt) * nt
-                f_d_perp = f_d - f_d_para
-                f_s_new = f_s_para + f_s_perp * self.containment_factor
-                self.forces['spring'][i] = f_s_new
-                self.forces['neb'][i] = f_d_perp + f_s_new
-#                print i, np.vdot(f_r_perp, f_s_perp), np.vdot(normalize(f_r_perp), normalize(f_s_perp))
-        norm_force = (((self.forces['neb'][1 : self.nimages - 1].reshape((-1, 3)))**2).sum(axis=1).max())**0.5
-        if norm_force < self.reduce_containment_tol:
-            self.containment_factor *= (1.0 - 10.0 * (self.reduce_containment_tol - norm_force))
-            if self.containment_factor < 0.0:
-                self.containment_factor = 0.0
-#        else:
-#            self.containment_factor *= (1.0 + 10.0 * (norm_force - self.reduce_containment_tol))
-        print self.containment_factor, norm_force, (1.0 - 10.0 * (self.reduce_containment_tol - norm_force))
 
     def project_forces(self, sort='dimer'):
         for i in range(1, self.nimages - 1):
