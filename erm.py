@@ -13,7 +13,17 @@ class ERM(NEB):
         NEB.__init__(self, images, k, climb, parallel)
 
         self.spring_force = 'full'
-        self.decouple_inidividual_modes = []
+
+        
+        self.decouple_modes = decouple_modes # Release the orthogonality constraint of the dimer and the path.
+
+        # Experimental features, activate manually
+        self.reduce_containment = False # Iteratively reduce the perpendicular spring components when corner cutting is detected.
+        self.dual_tangent = False # Use a central difference tangent for the path orthogonality constraint of the dimer.
+
+        # Experimental feature parameters
+        self.reduce_containment_tol = 0.010 # Tolerance for detecting corner-cutting
+        self.containment_factors = np.ones((self.nimages))
 
         # Set up MinModeAtoms objects for each image and make individual logfiles for each
         # NB: Shouldn't there be a ERM_Control class that takes care of this crap?
@@ -84,16 +94,6 @@ class ERM(NEB):
         self.tangents[0] = t
         self.tangents[-1] = -t
 
-        # Save user variables
-        self.decouple_modes = decouple_modes # Release the orthogonality constraint of the minmode and tanget.
-
-        # Testing stuff
-        self.reduce_containment = False
-        self.reduce_containment_tol = 0.010
-        self.containment_factor = 1.0
-        self.decouple_individual_modes = []
-        self.containment_factors = np.ones((self.nimages))
-
     def calculate_image_energies_and_forces(self, i):
         self.forces['real'][i] = self.images[i].get_forces(real = True)
         self.energies[i] = self.images[i].get_potential_energy()
@@ -143,9 +143,6 @@ class ERM(NEB):
         if self.reduce_containment:
             self.adjust_containment_forces()
         self.control.increment_counter('optcount')
-#        for k in range(1, self.nimages - 1):
-#        for k in [4, 5, 6]:
-#            print k, np.vdot(normalize(self.tangents[k]), self.images[k].get_eigenmode())
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def adjust_containment_forces(self):
@@ -208,7 +205,6 @@ class ERM(NEB):
             f_r_perp = f_r - f_r_para
             if self.climb and i == self.imax:
                 self.forces['neb'][i] = f_r - 2 * f_r_para
-#                print 'NORMS', norm(self.forces['real'][i]), norm(self.forces['dimer'][i]), norm(self.forces['neb'][i])
             else:
                 f_s = self.get_image_spring_force(i)
                 self.forces['spring'][i] = f_s
@@ -221,7 +217,7 @@ class ERM(NEB):
         else:
             nm = normalize(img.get_eigenmode())
             # This is the base of the dual-tangent scheme, it needs to be better!
-            if (self.reduce_containment or self.spring_force == 'norm') and not (self.climb and i == self.imax):
+            if self.dual_tangent and not (self.climb and i == self.imax):
                 pm = self.images[i-1].get_positions()
                 pp = self.images[i+1].get_positions()
                 nt = normalize(pp - pm)
