@@ -81,10 +81,6 @@ class NEB:
         images = self.images
         t_m = images[1].get_positions() - images[0].get_positions()
         self.tangents[0] = t_m.copy()
-#        try:
-#            self.decouple_individual_modes = [1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 16, 17]
-#        except:
-#            pass
         for i in range(1, self.nimages - 1):
             t_p = (images[i + 1].get_positions() - images[i].get_positions())
             e = self.energies[i]
@@ -166,6 +162,7 @@ class NEB:
         return (nt_p - nt_m) * self.k * t
 
     def get_dneb_image_spring_force(self, i, sw=True):
+        # An implementation of the double nudged spring force. This definition has not been tested to any real extent
         t = self.tangents[i]
         nt = t / np.vdot(t, t)**0.5
         p_m = self.images[i - 1].get_positions()
@@ -186,7 +183,6 @@ class NEB:
         f_s_dneb = f_s_perp - np.vdot(f_s_perp, nf_r_perp) * nf_r_perp
         if sw:
             f_s_swdneb = 2 * atan(np.vdot(f_r_perp, f_r_perp) / np.vdot(f_s_perp, f_s_perp)) * f_s_dneb / pi
-            print i, np.vdot(f_s_dneb, f_s_dneb) / np.vdot(f_s_swdneb, f_s_swdneb)
             return f_s_para + f_s_swdneb
         else:
             return f_s_para + f_s_dneb
