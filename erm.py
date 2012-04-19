@@ -216,13 +216,12 @@ class ERM(NEB):
 
     def calculate_image_eigenmode(self, i):
         img = self.images[i]
-        if self.decouple_modes or i in self.decouple_individual_modes:
+        if self.decouple_modes:
             img.set_basis(None)
         else:
             nm = normalize(img.get_eigenmode())
-#            if (self.reduce_containment or self.spring_force == 'norm') and not (self.climb and i == self.imax):
-            if True:
-#            if False:
+            # This is the base of the dual-tangent scheme, it needs to be better!
+            if (self.reduce_containment or self.spring_force == 'norm') and not (self.climb and i == self.imax):
                 pm = self.images[i-1].get_positions()
                 pp = self.images[i+1].get_positions()
                 nt = normalize(pp - pm)
