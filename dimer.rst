@@ -76,9 +76,9 @@ Restarting is currently a rather manual task but should be updated to be more au
 Symmetries
 ==========
 
-The Dimer method is designed to locate non-equlibrium structures.
+The Dimer method is designed to locate non-equilibrium structures.
 Due to this using symmetries to reduce calculational efforts must be used with care.
-As an example, when using GPAW_, ``calc.set(usesymm = False)``, will avoid the breaking of k-point symmetries when far away from equillibrium structures (usesymm_).
+As an example, when using GPAW_, ``calc.set(usesymm = False)``, will avoid the breaking of k-point symmetries when far away from equilibrium structures (usesymm_).
 
 .. _GPAW: http://wiki.fysik.dtu.dk/gpaw
 .. _usesymm: https://wiki.fysik.dtu.dk/gpaw/documentation/manual.html#manual-usesymm
