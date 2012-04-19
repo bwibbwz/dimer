@@ -131,12 +131,12 @@ class ERM(NEB):
                 world.broadcast(self.images[i].eigenmodes[0], root)
 
         # Update the highest energy image
-        self.imax = 1 + np.argsort(self.energies[1:-1])[-1]
+        self.imax = 1 + np.argsort(self.energies[3:-3])[-1]
         self.emax = self.energies[self.imax]
-        if self.imax == self.nimages - 2:
-            self.imax -= 1
-        elif self.imax == 1:
-            self.imax += 1
+#        if self.imax == self.nimages - 2:
+#            self.imax -= 1
+#        elif self.imax == 1:
+#            self.imax += 1
         # BUG: self.imax can be an endimage. Partially fixed by setting the end images energy to -np.inf (somewhere else)
 
         # Calculate the tangents of all the images
@@ -188,14 +188,14 @@ class ERM(NEB):
                 if dot < -0.98 and dot > -1.02 and ratio > 0.98 and ratio < 1.02 and norm_force < self.reduce_containment_tol:
                     if i == 1:
                         cfp = self.containment_factors[i] / self.containment_factors[i+1]
-                        if cfp > 0.40:
+                        if cfp > 0.70:
                             self.containment_factors[i] *= 0.70
                             print 'change'
                         else:
                             print 'no change'
                     elif i == self.nimages - 2:
                         cfm = self.containment_factors[i] / self.containment_factors[i-1]
-                        if cfm > 0.40:
+                        if cfm > 0.70:
                             self.containment_factors[i] *= 0.70
                             print 'change'
                         else:
@@ -203,7 +203,7 @@ class ERM(NEB):
                     else:
                         cfp = self.containment_factors[i] / self.containment_factors[i+1]
                         cfm = self.containment_factors[i] / self.containment_factors[i-1]
-                        if cfp > 0.40 and cfm > 0.40:
+                        if cfp > 0.70 and cfm > 0.70:
                             self.containment_factors[i] *= 0.70
                             print 'change'
                         else:
@@ -295,6 +295,7 @@ class ERM(NEB):
             nm = normalize(img.get_eigenmode())
             if (self.reduce_containment or self.spring_force == 'norm') and not (self.climb and i == self.imax):
 #            if True:
+#            if False:
                 pm = self.images[i-1].get_positions()
                 pp = self.images[i+1].get_positions()
                 nt = normalize(pp - pm)
