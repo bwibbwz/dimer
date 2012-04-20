@@ -164,33 +164,37 @@ class ERM(NEB):
                 dot = np.vdot(nd, ns)
                 ratio = norm(f_s_perp_red) / norm(f_d_perp)
                 norm_force = (((f_d_perp + f_s_para + f_s_perp_red)**2).sum(axis=1).max())**0.5
-                print '%02i  % 4.3f  % 4.3f  % 4.3f' % (i, dot, ratio, self.containment_factors[i]),
-                print '% 4.3f' % norm_force,
+#                print '%02i  % 4.3f  % 4.3f  % 4.3f' % (i, dot, ratio, self.containment_factors[i]),
+#                print '% 4.3f' % norm_force,
                 if dot < -0.98 and dot > -1.02 and ratio > 0.98 and ratio < 1.02 and norm_force < self.reduce_containment_tol:
                     if i == 1:
                         cfp = self.containment_factors[i] / self.containment_factors[i+1]
                         if cfp > 0.40:
                             self.containment_factors[i] *= 0.70
-                            print 'change'
+#                            print 'change'
                         else:
-                            print 'no change'
+#                            print 'no change'
+                            pass
                     elif i == self.nimages - 2:
                         cfm = self.containment_factors[i] / self.containment_factors[i-1]
                         if cfm > 0.40:
                             self.containment_factors[i] *= 0.70
-                            print 'change'
+#                            print 'change'
                         else:
-                            print 'no change'
+#                            print 'no change'
+                            pass
                     else:
                         cfp = self.containment_factors[i] / self.containment_factors[i+1]
                         cfm = self.containment_factors[i] / self.containment_factors[i-1]
                         if cfp > 0.40 and cfm > 0.40:
                             self.containment_factors[i] *= 0.70
-                            print 'change'
+#                            print 'change'
                         else:
-                            print 'no change'
+#                            print 'no change'
+                            pass
                 else:
-                    print ''
+#                    print ''
+                    pass
                 f_s_new = f_s_para + f_s_perp * self.containment_factors[i]
                 self.forces['spring'][i] = f_s_new
                 self.forces['neb'][i] = f_d_perp + f_s_new
