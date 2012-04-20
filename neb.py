@@ -21,7 +21,7 @@ class NEB:
         # Make sure all the images are of even length.
         # NB: This test should be more elaborate and include species and
         #     possible strangeness in the path.
-        assert [len(images[0]) for _ in images] == 
+        assert [len(images[0]) for _ in images] == \
                [len(img) for img in images]
 
         self.nimages = len(images)
@@ -56,7 +56,7 @@ class NEB:
 
     def get_positions(self):
         """Return the positions of all the atoms for all the images in
-           a single array"""
+           a single array."""
         positions = np.zeros(((self.nimages - 2) * self.natoms, 3))
         n1 = 0
         for image in self.images[1:-1]:
@@ -66,6 +66,7 @@ class NEB:
         return positions
 
     def set_positions(self, positions):
+        """Set the positions of the images."""
         n1 = 0
         for image in self.images[1:-1]:
             n2 = n1 + self.natoms
@@ -79,6 +80,8 @@ class NEB:
                 pass
 
     def update_tangents(self):
+        """Update the tangent estimates. Only the 'top energy image' tangent
+           is currently supported."""
         images = self.images
         t_m = images[1].get_positions() - images[0].get_positions()
         self.tangents[0] = t_m.copy()
@@ -87,12 +90,12 @@ class NEB:
             e = self.energies[i]
             e_m = self.energies[i - 1]
             e_p = self.energies[i + 1]
-            if (e < e_m and e > e_p) or (i == self.nimages - 2 and e_p == -np.inf):
+            if (e < e_m and e > e_p) or \
+               (i == self.nimages - 2 and e_p == -np.inf):
                 t = t_m.copy()
             elif (e > e_m and e < e_p) or (i == 1 and e_m == -np.inf):
                 t = t_p.copy()
             else:
-                # BUG: Possible error when end images become highest.
                 e_max = max(abs(e_p - e), abs(e_m - e))
                 e_min = min(abs(e_p - e), abs(e_m - e))
                 if e_p > e_m:
@@ -106,10 +109,12 @@ class NEB:
         self.tangents[-1] = t_m.copy()
 
     def calculate_image_energies_and_forces(self, i):
+        """Calculate and store the force and energies for a single image."""
         self.forces['real'][i] = self.images[i].get_forces()
         self.energies[i] = self.images[i].get_potential_energy()
 
     def calculate_energies_and_forces(self):
+        """Calculate and store the forces and energies for the band."""
         images = self.images
 
         if not self.parallel:
@@ -135,7 +140,7 @@ class NEB:
                 world.broadcast(self.forces['real'][i], root)
 
     def get_forces(self):
-        """Evaluate and return the forces."""
+        """Evaluate, modify and return the forces."""
 
         # Update the real forces and energies
         self.calculate_energies_and_forces()
@@ -153,6 +158,7 @@ class NEB:
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def get_norm_image_spring_force(self, i):
+        """Calculate the 'norm' spring force for a single image."""
         t = self.tangents[i]
         nt = t / np.vdot(t, t)**0.5
         p_m = self.images[i - 1].get_positions()
@@ -162,33 +168,8 @@ class NEB:
         nt_p = np.vdot(p_p - p, p_p - p)**0.5
         return (nt_p - nt_m) * self.k * t
 
-    def get_dneb_image_spring_force(self, i, sw=True):
-        # An implementation of the double nudged spring force. This definition has not been tested to any real extent
-        t = self.tangents[i]
-        nt = t / np.vdot(t, t)**0.5
-        p_m = self.images[i - 1].get_positions()
-        p = self.images[i].get_positions()
-        p_p = self.images[i + 1].get_positions()
-        t_m = p - p_m
-        t_p = p_p - p
-        f_s = (t_p - t_m) * self.k
-        f_s_para = np.vdot(f_s, nt) * nt
-        f_s_perp = f_s - f_s_para
-        try:
-            f_r = self.forces['dimer'][i]
-        except:
-            f_r = self.forces['real'][i]
-        f_r_para = np.vdot(f_r, nt) * nt
-        f_r_perp = f_r - f_r_para
-        nf_r_perp = f_r_perp / np.vdot(f_r_perp, f_r_perp)**0.5
-        f_s_dneb = f_s_perp - np.vdot(f_s_perp, nf_r_perp) * nf_r_perp
-        if sw:
-            f_s_swdneb = 2 * atan(np.vdot(f_r_perp, f_r_perp) / np.vdot(f_s_perp, f_s_perp)) * f_s_dneb / pi
-            return f_s_para + f_s_swdneb
-        else:
-            return f_s_para + f_s_dneb
-
     def get_full_image_spring_force(self, i):
+        """Calculate the 'full' spring force for a single image."""
         p_m = self.images[i - 1].get_positions()
         p = self.images[i].get_positions()
         p_p = self.images[i + 1].get_positions()
@@ -197,22 +178,18 @@ class NEB:
         return (t_p - t_m) * self.k
 
     def get_image_spring_force(self, i):
-        # NB: This needs to be more intelligent. There is a LOT of identical
-        #     code in the individual functions which can most likely be
-        #     reduced by calculating each bit in functions and combining
-        #     them here for the appropriate effect.
+        """Calculate the spring force for a single image."""
         if self.spring_force == 'norm':
             return self.get_norm_image_spring_force(i)
         elif self.spring_force == 'full':
             return self.get_full_image_spring_force(i)
-        elif self.spring_force == 'dneb':
-            return self.get_dneb_image_spring_force(i, sw = False)
-        elif self.spring_force == 'swdneb':
-            return self.get_dneb_image_spring_force(i, sw = True)
         else:
-            raise NotImplementedError('Only ["norm", "full", "dneb", "swdneb"] are allowed.')
+            e = 'The only supported spring force defintions are: "norm"' + \
+                ' and "full".'
+            raise NotImplementedError(e)
 
     def project_forces(self, sort='real'):
+        """Project the forces."""
         for i in range(1, self.nimages - 1):
             t = self.tangents[i]
             nt = t / np.vdot(t, t)**0.5
@@ -227,6 +204,7 @@ class NEB:
                 self.forces['neb'][i] = f_r_perp + f_s
 
     def get_potential_energy(self):
+        """Return the energy of the top energy image."""
         return self.emax
 
     def __len__(self):
