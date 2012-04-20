@@ -1,11 +1,5 @@
 from math import sqrt
 
-''' Ideas
-Save each tangent as a trajectory (like ase.vibrations) and/or textfile.
-Make the barrier energy accesible (get_barrier_energy())
-Make it possible to seperate optimizers for each image. (might help in order to get BFGS working with NEB).
-'''
-
 import numpy as np
 from math import atan, pi
 
@@ -25,8 +19,10 @@ class NEB:
         self.natoms = len(images[0])
 
         # Make sure all the images are of even length.
-        # NB: This test should be more elaborate and include species and possible strangeness in the path.
-        assert [len(images[0]) for _ in images] == [len(img) for img in images] 
+        # NB: This test should be more elaborate and include species and
+        #     possible strangeness in the path.
+        assert [len(images[0]) for _ in images] == 
+               [len(img) for img in images]
 
         self.nimages = len(images)
         self.emax = np.nan
@@ -44,11 +40,8 @@ class NEB:
         self.energies[0] = -np.inf
         self.energies[-1] = -np.inf
 
-        # This option should be available to the users
+        # Set the spring force implementation
         self.spring_force = 'norm'
-
-        # ERM dev
-        self.forces['spring'] = np.zeros((self.nimages, self.natoms, 3))
 
     def interpolate(self, initial=0, final=-1):
         """Interpolate linearly between initial and final images."""
@@ -62,6 +55,8 @@ class NEB:
             self.images[initial + i].set_positions(pos1 + i * d)
 
     def get_positions(self):
+        """Return the positions of all the atoms for all the images in
+           a single array"""
         positions = np.zeros(((self.nimages - 2) * self.natoms, 3))
         n1 = 0
         for image in self.images[1:-1]:
@@ -76,6 +71,12 @@ class NEB:
             n2 = n1 + self.natoms
             image.set_positions(positions[n1:n2])
             n1 = n2
+
+            # Parallel NEB with Jacapo needs this:
+            try:
+                image.get_calculator().set_atoms(image)
+            except AttributeError:
+                pass
 
     def update_tangents(self):
         images = self.images
@@ -196,7 +197,10 @@ class NEB:
         return (t_p - t_m) * self.k
 
     def get_image_spring_force(self, i):
-        # NB: This needs to be more intelligent. There is a LOT of identical code in the individual functions which can most likely be reduced by calculating each bit in functions and combining them here for the appropriate effect.
+        # NB: This needs to be more intelligent. There is a LOT of identical
+        #     code in the individual functions which can most likely be
+        #     reduced by calculating each bit in functions and combining
+        #     them here for the appropriate effect.
         if self.spring_force == 'norm':
             return self.get_norm_image_spring_force(i)
         elif self.spring_force == 'full':
