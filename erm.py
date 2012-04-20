@@ -13,7 +13,6 @@ class ERM(NEB):
         NEB.__init__(self, images, k, climb, parallel)
 
         self.spring_force = 'full'
-
         
         self.decouple_modes = decouple_modes # Release the orthogonality constraint of the dimer and the path.
 
