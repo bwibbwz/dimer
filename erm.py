@@ -211,14 +211,17 @@ class ERM(NEB):
                                          min(self.containment_factors)
 
     def calculate_image_eigenmode(self, i):
+        """Calculate the minimum mode at an image."""
         img = self.images[i]
         if self.decouple_modes:
             img.set_basis(None)
         else:
+            # Maintain orthogonality to the path.
             nm = normalize(img.get_eigenmode())
-            # This is the base of the dual-tangent scheme,
-            # it needs to be better!
             if self.dual_tangent and not (self.climb and i == self.imax):
+                # Use a cenral difference tangent for a more accurate path
+                # estimate. This feature is experimental and can only be
+                # by manually setting self.dual_tangent = True.
                 pm = self.images[i-1].get_positions()
                 pp = self.images[i+1].get_positions()
                 nt = normalize(pp - pm)
@@ -229,6 +232,7 @@ class ERM(NEB):
         img.get_forces()
 
     def calculate_eigenmodes(self):
+        """Calculate the minimum mode of all the images."""
         if self.parallel:
             i = rank * (self.nimages - 2) // size + 1
             try:
@@ -254,6 +258,7 @@ class ERM(NEB):
                 self.calculate_image_eigenmode(i)
 
     def invert_eigenmode_forces(self):
+        """Transform the forces so ridges are mapped to MEPs."""
         for i in range(1, self.nimages - 1):
             f_r = self.forces['real'][i]
             t = self.tangents[i]
