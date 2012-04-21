@@ -6,7 +6,6 @@ from math import atan, pi
 from ase.parallel import world, rank, size
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.io import read
-from ase.dimer import normalize, norm
 
 class NEB:
     def __init__(self, images, k=1.0, climb=False, parallel=False):
@@ -36,15 +35,22 @@ class NEB:
         self.energies = np.zeros(self.nimages)
         self.tangents = np.zeros((self.nimages, self.natoms, 3))
 
-        # NB: Should check if the numbers are available
-        self.energies[0] = -np.inf
-        self.energies[-1] = -np.inf
+        # Get the end point energies if they are available.
+        try:
+            self.energies[0] = self.images[0].get_potential_energy()
+        except:
+            self.energies[0] = -np.inf
+        try:
+            self.energies[-1] = self.images[-1].get_potential_energy()
+        except:
+            self.energies[-1] = -np.inf
 
         # Set the spring force implementation
         self.spring_force = 'norm'
 
     def interpolate(self, initial=0, final=-1):
-        """Interpolate linearly between initial and final images."""
+        """Interpolate linearly between two images. The end images are
+           used by default"""
         if final < 0:
             final = self.nimages + final
         n = final - initial
