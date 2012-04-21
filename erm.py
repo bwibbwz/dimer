@@ -30,6 +30,7 @@ class ERM(NEB):
         # Experimental feature parameters
         # - Force tolerance for detecting corner-cutting
         self.reduce_containment_tol = 0.010
+        # - Individual spring force reduction factors
         self.containment_factors = np.ones((self.nimages))
 
         # Set up MinModeAtoms objects for each image and make individual
@@ -90,6 +91,7 @@ class ERM(NEB):
             image = MinModeAtoms(images[i], min_control, eigenmodes = minmode)
             self.images.append(image)
 
+        # Initialize empty arrays
         self.forces['dimer'] = np.zeros((self.nimages, self.natoms, 3))
 
         # Populate the tangents
@@ -109,6 +111,7 @@ class ERM(NEB):
         self.tangents[-1] = -t
 
     def calculate_image_energies_and_forces(self, i):
+        """Calculate and store the force and energy for a single image."""
         self.forces['real'][i] = self.images[i].get_forces(real = True)
         self.energies[i] = self.images[i].get_potential_energy()
 
@@ -157,8 +160,10 @@ class ERM(NEB):
         self.control.increment_counter('optcount')
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
-    # Experimental Feature
     def adjust_containment_forces(self):
+        """Iteratively reduce the amount of the perpendicular spring force.
+           This feature is experimental and incomplete, and can only be
+           activated by manually setting self.reduce_containtment = True."""
         for i in range(1, self.nimages - 1):
             if self.climb and i == self.imax:
                 pass
@@ -206,6 +211,7 @@ class ERM(NEB):
                                          min(self.containment_factors)
 
     def project_forces(self, sort='dimer'):
+        """Project the forces on each image."""
         for i in range(1, self.nimages - 1):
             t = self.tangents[i]
             nt = t / np.vdot(t, t)**0.5
