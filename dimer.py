@@ -308,7 +308,7 @@ class MinModeControl:
             else:
                 self.set_parameter(key, kwargs[key], log = False)
 
-        # Set the rank to write the logfile to (important for parallel calculations)
+        # Set the rank to write the logfile to (important for parallel)
         self.write_rank = write_rank
 
         # Initialize the log files
@@ -529,7 +529,8 @@ class MinModeAtoms:
         modified version the current time.
 
     """
-    def __init__(self, atoms, control=None, eigenmodes=None, basis=None, random_seed=None, **kwargs):
+    def __init__(self, atoms, control=None, eigenmodes=None, basis=None, \
+                 random_seed=None, **kwargs):
         self.minmode_init = True
         self.atoms = atoms
 
@@ -629,10 +630,12 @@ class MinModeAtoms:
                     eigenmode = normalize(eigenmode)
                 elif self.basis.shape[1:] == eigenmode.shape:
                     for base in self.basis:
-                        eigenmode -= np.vdot(eigenmode, self.basis) * self.basis
+                        eigenmode -= np.vdot(eigenmode, self.basis) * \
+                                     self.basis
                     eigenmode = normalize(eigenmode)
                 else:
-                    raise ValueError('The basis definition was not understood.')
+                    e = 'The basis definition was not understood.'
+                    raise ValueError(e)
 
             eigenmodes = [eigenmode]
 
@@ -648,14 +651,17 @@ class MinModeAtoms:
                     self.set_positions(pos)
                     if self.basis is not None:
                         if self.basis.shape == eigenmode.shape:
-                            eigenmode -= np.vdot(eigenmode, self.basis) * self.basis
+                            eigenmode -= np.vdot(eigenmode, self.basis) * \
+                                         self.basis
                             eigenmode = normalize(eigenmode)
                         elif self.basis.shape[1:] == eigenmode.shape:
                             for base in self.basis:
-                                eigenmode -= np.vdot(eigenmode, self.basis) * self.basis
+                                eigenmode -= np.vdot(eigenmode, self.basis) \
+                                             * self.basis
                             eigenmode = normalize(eigenmode)
                         else:
-                            raise ValueError('The basis definition was not understood.')
+                            e = 'The basis definition was not understood.'
+                            raise ValueError(e)
                     eigenmodes += [eigenmode]
 
         self.eigenmodes = eigenmodes
@@ -663,7 +669,9 @@ class MinModeAtoms:
         if self.order > 1:
             for k in range(self.order):
                 self.ensure_eigenmode_orthogonality(k)
-        # BUG: Logging the eigenmode here with the same optcount as those who have been rotated can cause problems, in particular if the initialize function is called multiple times, like in ERM.
+        # BUG: Logging the eigenmode here with the same optcount as those who
+        #      have been rotated can cause problems, in particular if the
+        #      initialize function is called multiple times, like in ERM.
         self.eigenmode_log()
 
     # NB maybe this name might be confusing in context to
@@ -737,7 +745,8 @@ class MinModeAtoms:
                     for base in self.basis:
                         basis.append(base)
                 else:
-                    raise ValueError('The basis definition was not understood.')
+                    e = 'The basis definition was not understood.'
+                    raise ValueError(e)
             search = DimerEigenmodeSearch(self, self.control, \
                 eigenmode = self.eigenmodes[k], basis = basis)
             search.converge_to_eigenmode()
@@ -1204,8 +1213,7 @@ def read_eigenmode(mlog, index = -1):
             mode[k_atom][k_dim] = float(line[k_dim + 2])
         k_atom += 1
 
-    # Possible BUG: mode should be a np.array(mode).
-    return mode
+    return np.array(mode)
 
 # Aliases
 DimerAtoms = MinModeAtoms
