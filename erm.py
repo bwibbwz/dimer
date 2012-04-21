@@ -4,8 +4,7 @@ import numpy as np
 
 from ase.parallel import world, rank, size
 from ase.neb import NEB
-from ase.dimer import normalize, DimerEigenmodeSearch, MinModeAtoms, perpendicular_vector
-from ase.dimer import norm, parallel_vector, DimerControl
+from ase.dimer import MinModeAtoms, norm, normalize, perpendicular_vector
 
 class ERM(NEB):
     def __init__(self, images, control, k=1.0, climb=False, parallel=False, \
