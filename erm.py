@@ -210,21 +210,6 @@ class ERM(NEB):
                 self.containment_factors[self.imax] = \
                                          min(self.containment_factors)
 
-    def project_forces(self, sort='dimer'):
-        """Project the forces on each image."""
-        for i in range(1, self.nimages - 1):
-            t = self.tangents[i]
-            nt = t / np.vdot(t, t)**0.5
-            f_r = self.forces[sort][i]
-            f_r_para = np.vdot(f_r, nt) * nt
-            f_r_perp = f_r - f_r_para
-            if self.climb and i == self.imax:
-                self.forces['neb'][i] = f_r - 2 * f_r_para
-            else:
-                f_s = self.get_image_spring_force(i)
-                self.forces['spring'][i] = f_s
-                self.forces['neb'][i] = f_r_perp + f_s
-
     def calculate_image_eigenmode(self, i):
         img = self.images[i]
         if self.decouple_modes:
