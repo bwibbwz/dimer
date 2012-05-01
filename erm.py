@@ -7,6 +7,54 @@ from ase.neb import NEB
 from ase.dimer import MinModeAtoms, norm, normalize, perpendicular_vector
 
 class ERM(NEB):
+    """An implementation of the energy ridge mapping method.
+
+    This class implements the energy ridge mapping method for detecting
+    ridges and second order saddle point between neighboring first order
+    saddle points, using a dimer method type algorithm to transform ridges
+    into minumum energy paths and a NEB type algortihm to map it.
+
+    Parameters:
+
+    images : list of Atoms objects
+        The images used for the calculation. Identical with regards to
+        atomic species but unique with regards to coordinates (can use
+        ERM.interpolate() for a linear interpolation). Each image requires
+        a separate calculator.
+    control : DimerControl object
+        Contains the parameters necessary for the eigenmode search.
+        Only a single control object is needed for the entire calculation,
+        it will be copied and names will be appended and incremented for
+        each image.
+    k : float
+        The spring constant for equal spacing of the images.
+    climb : boolean
+        Turns on the climbing images algortithm for accurately finding the
+        highest energy second order saddle point along the ridge. 
+    parallel : boolean
+        Turns on parallel calculation of the forces, energies and minimum
+        modes.
+    minmodes : list of xyz values for each atom and each image
+        Minimum modes, the eigenmodes corresponding to the lowest eigenvalues
+        of the Hessian. Each one must be an ndarray of shape (n_atoms, 3).
+        The list can contain 1 minimum mode for each image, 2 minmum modes
+        (assumed to be for the end images and  linear interpolation is used)
+        or 1 minimum mode (used for all the images).
+    decouple_modes : boolean
+        Release the constraint that the minimum mode must be orthogonal to
+        the path. This is an advanced flag and will yield wrong and unstable
+        results when used without care.
+
+    Notes:
+   
+    Questions regarding the algorithm and implementation should be directed
+    to Jon Bergamnn Maronsson, reachable at bwibbwz@gmail.com
+
+    References:
+
+    .. [1] Maronsson, Jonsson and Vegge, PCCP 14, 2884 (2012)
+
+    """
     def __init__(self, images, control, k=1.0, climb=False, parallel=False, \
                  minmodes=None, decouple_modes=False):
         self.control = control
