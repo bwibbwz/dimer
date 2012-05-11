@@ -389,3 +389,5 @@ def fit0(E, F, R):
     Sfit[-1] = s[-1]
     Efit[-1] = E[-1]
     return s, E, Sfit, Efit, lines
+=======
+>>>>>>> 5866526d76bb0db02f470e063ce500d96280ea5b
