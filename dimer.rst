@@ -1,8 +1,9 @@
-.. module:: dimer
-
 ================
 The Dimer method
 ================
+
+.. module:: dimer
+   :synopsis: The Dimer method.
 
 .. default-role:: math
 
@@ -15,7 +16,7 @@ This is accomplished in two indepedant steps.
 
 In effect this transforms saddle points, locally, into minima which can then be found using traditional methods for structure optimization (:mod:`optimize`).
 
-There are four objects that combine to perform the above steps:
+There are four classes that combine to perform the above steps:
 
 - :class:`ase.dimer.DimerAtoms` (alias for :epydoc:`ase.dimer.MinModeAtoms`)
     A wrapper for :class:`~ase.atoms.Atoms` containing extra information needed for the Dimer method, such as the current eigenmode estimate, the curvature along that estimate and the modified force.
