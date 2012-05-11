@@ -196,7 +196,9 @@ class NEB:
             raise NotImplementedError(e)
 
     def project_forces(self, sort='real'):
-        """Project the forces."""
+        """Project the forces, replace the force components along the path
+           with the spring force. The input variable sort is included if
+           previous force manipulations have been performed."""
         for i in range(1, self.nimages - 1):
             t = self.tangents[i]
             nt = t / np.vdot(t, t)**0.5
