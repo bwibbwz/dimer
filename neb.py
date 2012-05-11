@@ -86,8 +86,9 @@ class NEB:
                 pass
 
     def update_tangents(self):
-        """Update the tangent estimates. Only the 'top energy image' tangent
-           is currently supported."""
+        """Update the tangent estimates. Only a forward difference tangent,
+           towards the neighboring top energy image, is currently
+           supported."""
         images = self.images
         t_m = images[1].get_positions() - images[0].get_positions()
         self.tangents[0] = t_m.copy()
