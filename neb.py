@@ -218,7 +218,7 @@ class NEB:
 
     def __len__(self):
         return (self.nimages - 2) * self.natoms
-
+ 
 class SingleCalculatorNEB(NEB):
     def __init__(self, images, k=0.1, climb=False):
         if isinstance(images, str):
