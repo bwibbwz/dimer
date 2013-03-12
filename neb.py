@@ -196,15 +196,29 @@ class NEB:
         t_p = p_p - p
         return t_p * self.k[i] - t_m * self.k[i - 1]
 
+    def get_old_image_spring_force(self, i):
+        """ Calculate the spring force according to the 'old' ASE
+	    implementation of NEB."""
+        t = self.tangents[i]
+        p_m = self.images[i - 1].get_positions()
+        p = self.images[i].get_positions()
+        p_p = self.images[i + 1].get_positions()
+        t_m = p - p_m
+        t_p = p_p - p
+	tt = np.vdot(t, t)
+	return np.vdot(t_p * self.k[i] - t_m * self.k[i - 1], t) / tt * t
+
     def get_image_spring_force(self, i):
         """Calculate the spring force for a single image."""
         if self.spring_force == 'norm':
             return self.get_norm_image_spring_force(i)
         elif self.spring_force == 'full':
             return self.get_full_image_spring_force(i)
+	elif self.spring_force == 'old':
+            return self.get_old_image_spring_force(i)
         else:
-            e = 'The only supported spring force defintions are: "norm"' + \
-                ' and "full".'
+            e = 'The only supported spring force defintions are: "norm",' + \
+                ' "full" and "old".'
             raise NotImplementedError(e)
 
     def project_forces(self, sort='real'):
