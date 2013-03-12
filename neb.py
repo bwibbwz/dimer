@@ -27,6 +27,18 @@ class NEB:
         self.emax = np.nan
         self.imax = None
 
+        # Set up the spring constant(s)
+	if isinstance(k, float):
+	    self.k = []
+	    for i in range(self.nimages - 1):
+	        self.k += [k]
+	else:
+	    if len(k) == self.nimages - 1:
+                self.k = k
+	    else:
+	        raise RuntimeError('The number of spring constants, k, must' \
+		                   ' be one fewer than the number of images.')
+	    
         # Set up empty arrays to store forces, energies and tangents
         self.forces = {}
         self.forces['real'] = np.zeros((self.nimages, self.natoms, 3))
@@ -173,7 +185,7 @@ class NEB:
         p_p = self.images[i + 1].get_positions()
         nt_m = np.vdot(p - p_m, p - p_m)**0.5
         nt_p = np.vdot(p_p - p, p_p - p)**0.5
-        return (nt_p - nt_m) * self.k * t
+        return (nt_p * self.k[i] - nt_m * self.k[i - 1]) * t
 
     def get_full_image_spring_force(self, i):
         """Calculate the 'full' spring force for a single image."""
@@ -182,7 +194,7 @@ class NEB:
         p_p = self.images[i + 1].get_positions()
         t_m = p - p_m
         t_p = p_p - p
-        return (t_p - t_m) * self.k
+        return t_p * self.k[i] - t_m * self.k[i - 1]
 
     def get_image_spring_force(self, i):
         """Calculate the spring force for a single image."""
