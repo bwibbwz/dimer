@@ -208,13 +208,15 @@ class NEB:
 	tt = np.vdot(t, t)
 	return np.vdot(t_p * self.k[i] - t_m * self.k[i - 1], t) / tt * t
 
-    def get_image_spring_force(self, i):
+    def get_image_spring_force(self, i, spring_force=None):
         """Calculate the spring force for a single image."""
-        if self.spring_force == 'norm':
+	if spring_force is None:
+	    spring_force = self.spring_force
+        if spring_force == 'norm':
             return self.get_norm_image_spring_force(i)
-        elif self.spring_force == 'full':
+        elif spring_force == 'full':
             return self.get_full_image_spring_force(i)
-	elif self.spring_force == 'old':
+	elif spring_force == 'old':
             return self.get_old_image_spring_force(i)
         else:
             e = 'The only supported spring force defintions are: "norm",' + \
