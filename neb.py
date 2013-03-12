@@ -36,7 +36,7 @@ class NEB:
 	    else:
 	        raise RuntimeError('The number of spring constants, k, must' \
 		                   ' be one fewer than the number of images.')
-	    
+
         # Set up empty arrays to store forces, energies and tangents
         self.forces = {}
         self.forces['real'] = np.zeros((self.nimages, self.natoms, 3))
