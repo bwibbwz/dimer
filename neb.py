@@ -28,13 +28,11 @@ class NEB:
         self.imax = None
 
         # Set up the spring constant(s)
-	if isinstance(k, float):
-	    self.k = []
-	    for i in range(self.nimages - 1):
-	        self.k += [k]
+	if isinstance(k, (float, int)):
+	    self.k = list([k]*(self.images - 1))
 	else:
 	    if len(k) == self.nimages - 1:
-                self.k = k
+                self.k = list(k)
 	    else:
 	        raise RuntimeError('The number of spring constants, k, must' \
 		                   ' be one fewer than the number of images.')
