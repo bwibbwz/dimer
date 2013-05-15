@@ -22,11 +22,11 @@ There are four classes that combine to perform the above steps:
     A wrapper for :class:`~ase.atoms.Atoms` containing extra information needed for the Dimer method, such as the current eigenmode estimate, the curvature along that estimate and the modified force.
 
 - :class:`ase.dimer.DimerControl` (:epydoc:`ase.dimer.DimerControl`)
-    Takes care of the parameters needed for a Dimer calculation. If a given parameter is not set a default value is used.
+    Takes care of the parameters needed for a Dimer calculation. If a given parameter is not set, a default value is used.
 
 - :class:`ase.dimer.DimerEigenmodeSearch` (:epydoc:`ase.dimer.DimerEigenmodeSearch`)
-    The class that takes care of finding the eigenmode corresponding to the lowest eigenvalue of the Hessian matrix.
-    This class is not used directly by the the general user.
+    Takes care of finding the eigenmode corresponding to the lowest eigenvalue of the Hessian matrix.
+    This class is not used directly by the general user.
 
 - :class:`ase.dimer.DimerTranslate` (alias for :epydoc:`ase.dimer.MinModeTranslate`)
     An optimizer class specifically tailored for use within the Dimer method.
