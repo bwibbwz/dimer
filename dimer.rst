@@ -118,8 +118,8 @@ Relevant literature references
 
 #. 'Comparison of methods for ﬁnding saddle points without knowledge of the ﬁnal states', R. A. Olsen, G. J. Kroes, G. Henkelman, A. Arnaldsson, and H. Jonsson, The Journal of Chemical Physics, 121(20):9776–9792, 2004. [...]
 
-List of Classes and Methods
--------------------------------
+List of the relevant Classes and Methods
+----------------------------------------
 
 .. autoclass:: ase.dimer.DimerAtoms
 .. autoclass:: ase.dimer.MinModeAtoms
@@ -136,7 +136,3 @@ List of Classes and Methods
 .. autoclass:: ase.dimer.DimerControl
    :members:
 
-------------
-
-.. autoclass:: ase.dimer.DimerEigenmodeSearch
-   :members:
