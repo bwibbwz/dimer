@@ -8,6 +8,8 @@ The Dimer method
 .. default-role:: math
 
 The Dimer method is an algorithm that can be used for finding saddle points, starting from any given atomic configuration.
+Saddle points often represent the energy barrier for transitioning from one state to another.
+
 This is accomplished in two indepedant steps.
 
 #. Estimating the eigenmode corresponding to the lowest eigenvalue of the Hessian matrix of the total energy with regards to the atomic coordinates.
@@ -34,7 +36,7 @@ There are four classes that combine to perform the above steps:
 Calculations
 ------------
 
-A simple example of use::
+A simple example of use, starting from a trajectory: initial.traj::
 
   # Import the relevant classes and methods
   from ase.dimer import DimerControl, DimerAtoms, DimerTranslate
@@ -52,11 +54,7 @@ A simple example of use::
   # Optimize the system
   opt.run(fmax = 0.01)
 
-Besides setting the convergence parameters in :class:`ase.dimer.DimerControl`, deciding which atoms are displaced (:meth:`ase.dimer.MinModeAtoms.displace`) and by how much is the most important feature of the Dimer method.
-
-.. .. automethod:: ase.dimer.MinModeAtoms.displace()
-
-Restarting::
+Restarting from a trajectory, old.traj, and eigenmode estimate, old.mlog::
 
   # Import the relevant classes and methods
   from ase.dimer import DimerControl, DimerAtoms, DimerTranslate, read_eigenmode
@@ -74,7 +72,34 @@ Restarting::
   # Optimize the system
   opt.run(fmax = 0.01)
 
-Restarting is currently a rather manual task but should be updated to be more automatic in the future.
+Besides setting the convergence parameters in :class:`ase.dimer.DimerControl`, deciding which atoms are displaced (:meth:`ase.dimer.MinModeAtoms.displace`) and by how much is the most important feature of the Dimer method.
+The parameters can be set in the :class:`DimerControl` object and/or the displace method.
+
+Changing control parameters 4 rotations per translate step and a dimer separation of 0.01Å and displacement, the 4 closest atoms to (0.0, 0.0, 0.0)::
+
+  # Import the relevant classes and methods
+  from ase.dimer import DimerControl, DimerAtoms, DimerTranslate
+  from ase.io import read
+  # Read in the initial position of the atoms
+  atoms = read('initial.traj')
+  # Set up the parameters for the dimer search
+  control = DimerControl(max_num_rot = 4, dimer_separation = 0.01)
+  # Read the last eigenmode
+  eigenmode = read_eigenmode('old.mlog', index = -1)
+  # Set up the DimerAtoms wrapper for the Atoms object and initialize the eigenmode.
+  d_atoms = DimerAtoms(atoms, control, eigenmodes = [eigenmode])
+  # Randomly displace the atoms (away from the minimum)
+  d_atoms.displace(displacement_center = (0.0, 0.0, 0.0), number_of_atoms = 4)
+  # Set up the optimizer
+  opt = DimerTranslate(d_atoms, logfile = 'dimer.optlog', trajectory = 'dimer.traj')
+  # Optimize the system
+  opt.run(fmax = 0.01)
+
+DFT
+===
+
+The default settings for the Dimer method are optimized for use with calculators without numerical noise.
+When used with DFT calculators, the dimer_separation parameter should be increased as to minimize the effect of numerical noise.
 
 Symmetries
 ==========
@@ -93,7 +118,7 @@ Relevant literature references
 
 #. 'Comparison of methods for ﬁnding saddle points without knowledge of the ﬁnal states', R. A. Olsen, G. J. Kroes, G. Henkelman, A. Arnaldsson, and H. Jonsson, The Journal of Chemical Physics, 121(20):9776–9792, 2004. [...]
 
-List of all Classes and Methods
+List of Classes and Methods
 -------------------------------
 
 .. autoclass:: ase.dimer.DimerAtoms
