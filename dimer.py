@@ -289,7 +289,7 @@ class MinModeControl:
     """A parent class for controlling minimum mode saddle point searches.
 
     Method specific control classes inherit this one. The only thing
-    inheriting classes need to implement are the log() method and
+    inheriting classes need to implement are the log_header() method and
     the *parameters* class variable with default values for ALL
     parameters needed by the method in question.
     When instantiating control classes default parameter values can
