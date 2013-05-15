@@ -38,6 +38,7 @@ A simple example of use::
 
   # Import the relevant classes and methods
   from ase.dimer import DimerControl, DimerAtoms, DimerTranslate
+  from ase.io import read
   # Read in the initial position of the atoms (often an energy minimum)
   atoms = read('initial.traj')
   # Set up the parameters for the dimer search
@@ -59,8 +60,9 @@ Restarting::
 
   # Import the relevant classes and methods
   from ase.dimer import DimerControl, DimerAtoms, DimerTranslate, read_eigenmode
+  from ase.io import read
   # Read in the last position of the atoms
-  atoms('old.traj')
+  atoms = read('old.traj')
   # Set up the parameters for the dimer search
   control = DimerControl(logfile = 'contd.dimlog', eigenmode_logfile = 'contd.mlog')
   # Read the last eigenmode
