@@ -102,6 +102,9 @@ class DimerEigenmodeSearch:
         self.dR = self.control.get_parameter('dimer_separation')
         self.logfile = self.control.get_logfile()
 
+    # FR: It would be incredibly nice if this function could be run until some
+    #     criterion is fulfilled. The usecase being: accurately finding an
+    #     eigenmode at the current location.
     def converge_to_eigenmode(self):
         """Perform an eigenmode search."""
         self.set_up_for_eigenmode_search()
