@@ -82,7 +82,7 @@ class ERM(NEB):
 
         # Set up MinModeAtoms objects for each image and make individual
         # logfiles for each
-        # NB: There be a ERM_Control class that takes care of this.
+        # NB: There should be a ERM_Control class that takes care of this.
         self.images = []
         for i in range(self.nimages):
             min_control = control.copy()
