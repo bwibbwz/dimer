@@ -348,6 +348,7 @@ class MinModeControl:
         """Log the parameters of the eigenmode search."""
         pass
 
+    # FR: Lacking the ability to process multiple parameter changes with one call!
     def set_parameter(self, parameter, value, log=True):
         """Change a parameter's value."""
         if not parameter in self.parameters.keys():
