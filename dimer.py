@@ -349,6 +349,7 @@ class MinModeControl:
         pass
 
     # FR: Lacking the ability to process multiple parameter changes with one call!
+    # FR: Having to insert the parameter names as strings is annoying at best.
     def set_parameter(self, parameter, value, log=True):
         """Change a parameter's value."""
         if not parameter in self.parameters.keys():
