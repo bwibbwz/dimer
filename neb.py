@@ -29,7 +29,7 @@ class NEB:
 
         # Set up the spring constant(s)
 	if isinstance(k, (float, int)):
-	    self.k = list([k]*(self.images - 1))
+	    self.k = list([k]*(self.nimages - 1))
 	else:
 	    if len(k) == self.nimages - 1:
                 self.k = list(k)
