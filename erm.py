@@ -128,7 +128,10 @@ class ERM(NEB):
                     raise NotImplementedError()
                 elif minmodes.shape == (2, self.natoms, 3):
                     # Assume end images minmodes and interpolate
-                    raise NotImplementedError()
+                    minmode1 = minmodes[0]
+                    minmode2 = minmodes[-1]
+                    d = (minmode2 - minmode1) / self.nimages
+                    minmode = minmode1 + i * d
                 elif minmodes.shape == (self.natoms, 3):
                     minmode = [minmodes.copy()]
                 else:
