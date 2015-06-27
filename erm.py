@@ -131,7 +131,7 @@ class ERM(NEB):
                     minmode1 = minmodes[0]
                     minmode2 = minmodes[-1]
                     d = (minmode2 - minmode1) / self.nimages
-                    minmode = minmode1 + i * d
+                    minmode = [minmode1 + i * d]
                 elif minmodes.shape == (self.natoms, 3):
                     minmode = [minmodes.copy()]
                 else:
