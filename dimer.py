@@ -1003,6 +1003,7 @@ class MinModeAtoms:
 
     def eigenmode_log(self):
         """Log the eigenmodes (eigenmode estimates)"""
+        # FR: Would be very handy to keep only intermittent or the last eigenmode(s)
         if self.mlogfile is not None:
             l = 'MINMODE:MODE: Optimization Step: %i\n' % \
                    (self.control.get_counter('optcount'))
