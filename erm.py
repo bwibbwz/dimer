@@ -198,6 +198,9 @@ class ERM(NEB):
         elif self.imax == 1:
             self.imax += 1
 
+        # Check the rest of the energy profile (EXPERIMENTAL)
+        self.check_energy_profile()
+
         # Calculate the tangents of all the images
         self.update_tangents()
 
@@ -211,6 +214,9 @@ class ERM(NEB):
             self.adjust_containment_forces()
         self.control.increment_counter('optcount')
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
+
+    def check_energy_profile(self):
+        pass
 
     def adjust_containment_forces(self):
         """Iteratively reduce the amount of the perpendicular spring force.
