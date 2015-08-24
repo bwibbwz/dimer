@@ -146,6 +146,7 @@ class ERM(NEB):
         self.forces['dimer'] = np.zeros((self.nimages, self.natoms, 3))
 
         # Populate the tangents
+        # FR: It would be handy to offer a tangent logfile
         for i in range(1, self.nimages - 1):
             p_m = self.images[i - 1].get_positions()
             p_p = self.images[i + 1].get_positions()
