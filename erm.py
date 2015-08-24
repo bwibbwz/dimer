@@ -199,7 +199,8 @@ class ERM(NEB):
             self.imax += 1
 
         # Check the rest of the energy profile (EXPERIMENTAL)
-        self.check_energy_profile()
+        if self.control.get_counter('optcount') % 5 == 0:
+            self.check_energy_profile()
 
         # Calculate the tangents of all the images
         self.update_tangents()
@@ -216,7 +217,36 @@ class ERM(NEB):
         return self.forces['neb'][1:self.nimages-1].reshape((-1, 3))
 
     def check_energy_profile(self):
-        pass
+        profile = ['dummy'] * self.nimages
+        profile[0] = 'end'
+        profile[-1] = 'end'
+        for i in range(1, self.nimages - 1):
+            e_m = self.energies[i + 1] - self.energies[i]
+            e_p = self.energies[i] - self.energies[i - 1]
+            if e_m > 0.0 and e_p > 0.0:
+                profile[i] = 'rising'
+            elif e_m < 0.0 and e_p < 0.0:
+                profile[i] = 'falling'
+            elif e_m < 0.0 and e_p > 0.0:
+                profile[i] = 'max'
+            elif e_m > 0.0 and e_p < 0.0:
+                profile[i] = 'min'
+                self.launch_dimer_search(i)
+            else:
+                profile[i] = 'equal'
+        print self.control.get_counter('optcount'), profile
+
+    def launch_dimer_search(self, nimg):
+        from ase.dimer import DimerAtoms, DimerTranslate
+        image = self.images[nimg]
+        token = '_dimer_test_img-%i_opt-%i' % (nimg, self.control.get_counter('optcount'))
+        dimer = DimerAtoms(atoms = image.atoms.copy(), control = image.control.copy(), logfile = '%s.dimlog' % token, eigenmodes = [image.get_eigenmode()])
+        # MISSING: Set up the eigenmode logfile
+        calc = self.calc_class()
+        dimer.atoms.set_calculator(calc)
+        # REMEMBER: The eigenmode given by ERM is is a reduced space. This might fuck with the calculations.
+        opt = DimerTranslate(dimer, logfile = '%s.optlog' % token, trajectory = '%s.traj' % token)
+        opt.run(fmax = 0.001)
 
     def adjust_containment_forces(self):
         """Iteratively reduce the amount of the perpendicular spring force.
