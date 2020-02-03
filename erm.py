@@ -3,8 +3,10 @@ from math import sqrt, cos, pi
 import numpy as np
 
 from ase.parallel import world, rank, size
-from ase.neb import NEB
-from ase.dimer import MinModeAtoms, norm, normalize, perpendicular_vector
+# NOTE: These imports are local since they require code that never was submitted to ASE.
+#       Eventually they should import from ase.neb and ase.dimer
+from neb import NEB
+from dimer import MinModeAtoms, norm, normalize, perpendicular_vector
 
 class ERM(NEB):
     """An implementation of the energy ridge mapping method.
