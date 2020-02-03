@@ -28,14 +28,14 @@ class NEB:
         self.imax = None
 
         # Set up the spring constant(s)
-	if isinstance(k, (float, int)):
-	    self.k = list([k]*(self.images - 1))
-	else:
-	    if len(k) == self.nimages - 1:
+        if isinstance(k, (float, int)):
+            self.k = list([k]*(self.images - 1))
+        else:
+            if len(k) == self.nimages - 1:
                 self.k = list(k)
-	    else:
-	        raise RuntimeError('The number of spring constants, k, must' \
-		                   ' be one fewer than the number of images.')
+            else:
+                raise RuntimeError('The number of spring constants, k, must' \
+                                   ' be one fewer than the number of images.')
 
         # Set up empty arrays to store forces, energies and tangents
         self.forces = {}
@@ -196,25 +196,25 @@ class NEB:
 
     def get_old_image_spring_force(self, i):
         """ Calculate the spring force according to the 'old' ASE
-	    implementation of NEB."""
+            implementation of NEB."""
         t = self.tangents[i]
         p_m = self.images[i - 1].get_positions()
         p = self.images[i].get_positions()
         p_p = self.images[i + 1].get_positions()
         t_m = p - p_m
         t_p = p_p - p
-	tt = np.vdot(t, t)
-	return np.vdot(t_p * self.k[i] - t_m * self.k[i - 1], t) / tt * t
+        tt = np.vdot(t, t)
+        return np.vdot(t_p * self.k[i] - t_m * self.k[i - 1], t) / tt * t
 
     def get_image_spring_force(self, i, spring_force=None):
         """Calculate the spring force for a single image."""
-	if spring_force is None:
-	    spring_force = self.spring_force
+        if spring_force is None:
+            spring_force = self.spring_force
         if spring_force == 'norm':
             return self.get_norm_image_spring_force(i)
         elif spring_force == 'full':
             return self.get_full_image_spring_force(i)
-	elif spring_force == 'old':
+        elif spring_force == 'old':
             return self.get_old_image_spring_force(i)
         else:
             e = 'The only supported spring force defintions are: "norm",' + \
