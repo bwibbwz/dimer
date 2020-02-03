@@ -29,7 +29,7 @@ class NEB:
 
         # Set up the spring constant(s)
         if isinstance(k, (float, int)):
-            self.k = list([k]*(self.images - 1))
+            self.k = list([k]*(self.nimages - 1))
         else:
             if len(k) == self.nimages - 1:
                 self.k = list(k)
@@ -238,13 +238,33 @@ class NEB:
                 self.forces['spring'][i] = f_s
                 self.forces['neb'][i] = f_r_perp + f_s
 
-    def get_potential_energy(self):
-        """Return the energy of the top energy image."""
+    def get_potential_energy(self, force_consistent=False):
+        """Return the energy of the top energy image.
+        Note that the force_consistent flag is only present 
+        for compatability."""
         return self.emax
 
     def __len__(self):
         return (self.nimages - 2) * self.natoms
  
+    def iterimages(self):
+        # Allows trajectory to convert NEB into several images
+        if not self.parallel or self.world.size == 1:
+            for atoms in self.images:
+                yield atoms
+            return
+
+        for i, atoms in enumerate(self.images):
+            if i == 0 or i == self.nimages - 1:
+                yield atoms
+            else:
+                atoms = atoms.copy()
+                atoms.calc = SinglePointCalculator(energy=self.energies[i],
+                                                   forces=self.real_forces[i],
+                                                   atoms=atoms)
+                yield atoms
+
+
 class SingleCalculatorNEB(NEB):
     def __init__(self, images, k=0.1, climb=False):
         if isinstance(images, str):
